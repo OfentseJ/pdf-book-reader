@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Document, Page } from "react-pdf";
 import { pdfjs } from "react-pdf";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -70,8 +72,9 @@ export default function PdfViewer() {
         {file && !error && (
           <div className="space-y-6">
             {/* PDF Document */}
-            <div className="flex justify-center">
-              <div className="border p-2 border-gray-300 rounded-lg overflow-hidden shadow-md">
+            <div className="flex justify-center items-center">
+              <div className="border p-2 border-gray-300 rounded-lg shadow-md">
+                {" "}
                 <Document
                   file={file}
                   onLoadSuccess={onDocumentLoadSuccess}
@@ -84,8 +87,7 @@ export default function PdfViewer() {
                 >
                   <Page
                     pageNumber={pageNum}
-                    width={Math.min(600, window.innerWidth - 100)}
-                    scale={window.innerWidth < 768 ? 0.6 : 0.8}
+                    width={Math.min(600, window.innerWidth - 100)} // Slightly smaller
                     loading={
                       <div className="p-8 text-center text-gray-600">
                         Loading page...
@@ -138,7 +140,6 @@ export default function PdfViewer() {
                 📖 Bookmark
               </button>
             </div>
-
             {/* Page Info */}
             <div className="text-center text-gray-600">
               <p className="text-sm">
