@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PdfViewer from "../components/PdfViewer";
+import { getBook, updateBookBookmarks } from "../utils/db";
 
 export default function ReaderPage() {
   const { id } = useParams();
@@ -8,38 +9,19 @@ export default function ReaderPage() {
   const [book, setBook] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("library");
-    if (stored) {
-      const books = JSON.parse(stored);
-      const found = books.find((b) => b.id === id);
-      if (found) {
-        setBook(found);
-      } else {
-        navigate("/");
-      }
+    getBook(id).then(setBook);
+  }, [id]);
+
+  const updateBookmarks = (newBookmarks) => {
+    if (book) {
+      updateBookBookmarks(book.id, newBookmarks).then(() => {
+        setBook((prev) => ({ ...prev, bookmarks: newBookmarks }));
+      });
     }
-  }, [id, navigate]);
-
-  const updateBookmarks = (pageNum) => {
-    if (!book) return;
-    const updatedBook = {
-      ...book,
-      bookmarks: book.bookmarks.includes(pageNum)
-        ? book.bookmarks
-        : [...book.bookmarks, pageNum].sort((a, b) => a - b),
-    };
-
-    setBook(updatedBook);
-
-    const stored = JSON.parse(localStorage.getItem("library")) || [];
-    const updatedLibrary = stored.map((b) =>
-      b.id === book.id ? updatedBook : b
-    );
-    localStorage.setItem("library", JSON.stringify(updatedLibrary));
   };
 
   if (!book) {
-    return <p className="p-6 text-gray-600">Loading book...</p>;
+    return <p className="p-6 text-gray-600">Loading...</p>;
   }
 
   return (
@@ -52,7 +34,7 @@ export default function ReaderPage() {
       </button>
       <h2 className="text-xl font-bold mb-4">📖 {book.name}</h2>
       <PdfViewer
-        file={book.fileUrl}
+        file={book.file}
         bookmarks={book.bookmarks}
         onAddBookmark={updateBookmarks}
       />

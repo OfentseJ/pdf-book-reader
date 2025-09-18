@@ -1,32 +1,38 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BookCard from "../components/BookCard";
+import { addBook, getBooks, removeBook } from "../utils/db";
 
 export default function LibraryPage() {
   const [books, setBooks] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const stored = localStorage.getItem("library");
-    if (stored) setBooks(JSON.parse(stored));
+    getBooks().then(setBooks);
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem("library", JSON.stringify(books));
-  }, [books]);
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    const fileUrl = URL.createObjectURL(file);
+
     const newBook = {
       id: crypto.randomUUID(),
       name: file.name,
-      fileUrl: URL.createObjectURL(file),
+      fileUrl,
       bookmarks: [],
+      file,
     };
 
-    setBooks((prev) => [...prev, newBook]);
+    addBook(newBook).then(() => {
+      setBooks((prev) => [...prev, newBook]);
+    });
+  };
+
+  const handleRemove = async (id) => {
+    await removeBook(id);
+    setBooks((prev) => prev.filter((b) => b.id !== id));
   };
 
   return (
@@ -42,11 +48,18 @@ export default function LibraryPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
         {books.map((book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            onOpen={() => navigate(`/reader/${book.id}`)}
-          />
+          <div key={book.id} className="relative">
+            <BookCard
+              book={book}
+              onOpen={() => navigate(`/reader/${book.id}`)}
+            />
+            <button
+              onClick={() => handleRemove(book.id)}
+              className="absolute top-2 right-2 px-2 py-1 text-xs text-white rounded hover:bg-red-600"
+            >
+              ✖
+            </button>
+          </div>
         ))}
       </div>
     </div>
