@@ -1,4 +1,3 @@
-// src/utils/db.js
 import { openDB } from "idb";
 
 // Initialize IndexedDB
@@ -10,25 +9,21 @@ export const dbPromise = openDB("pdfBooksDB", 1, {
   },
 });
 
-// Add a new book
 export async function addBook(book) {
   const db = await dbPromise;
   await db.put("books", book);
 }
 
-// Get all books
 export async function getBooks() {
   const db = await dbPromise;
   return await db.getAll("books");
 }
 
-// Get a single book by ID
 export async function getBook(id) {
   const db = await dbPromise;
   return await db.get("books", id);
 }
 
-// Update the bookmarks for a book
 export async function updateBookBookmarks(id, bookmarks) {
   const db = await dbPromise;
   const book = await db.get("books", id);
@@ -39,7 +34,6 @@ export async function updateBookBookmarks(id, bookmarks) {
   return book;
 }
 
-// Remove a single bookmark from a book
 export async function removeBookBookmark(id, pageNum) {
   const db = await dbPromise;
   const book = await db.get("books", id);
@@ -50,8 +44,19 @@ export async function removeBookBookmark(id, pageNum) {
   return book;
 }
 
-// Remove a book entirely
 export async function removeBook(id) {
   const db = await dbPromise;
   await db.delete("books", id);
+}
+
+export async function updateBookLastPage(id, lastPage) {
+  const db = await dbPromise;
+  const tx = db.transaction("books", "readwrite");
+  const store = tx.objectStore("books");
+  const book = await store.get(id);
+  if (book) {
+    book.lastPage = lastPage;
+    await store.put(book);
+  }
+  await tx.done;
 }

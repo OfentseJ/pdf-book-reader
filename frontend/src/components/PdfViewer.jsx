@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { getBook, updateBookBookmarks, removeBookBookmark } from "../utils/db";
+import {
+  getBook,
+  updateBookBookmarks,
+  removeBookBookmark,
+  updateBookLastPage,
+} from "../utils/db";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export default function PdfViewer() {
   const { id } = useParams();
+  const pageRef = useRef(null);
 
   const [book, setBook] = useState(null);
   const [numPages, setNumPages] = useState(null);
@@ -22,8 +28,13 @@ export default function PdfViewer() {
     getBook(id)
       .then((b) => {
         setBook(b);
+
         if (b?.file) {
           setPdfUrl(URL.createObjectURL(b.file));
+        }
+
+        if (b?.lastPage) {
+          setPageNum(b.lastPage);
         }
       })
       .catch(console.error);
@@ -32,6 +43,15 @@ export default function PdfViewer() {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
   }, [id]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") handlePageChange(pageNum - 1);
+      if (e.key === "ArrowRight") handlePageChange(pageNum + 1);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [pageNum, numPages]);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -43,8 +63,15 @@ export default function PdfViewer() {
 
   const bookmarkPage = async () => {
     if (!book) return;
+
+    if (book.bookmarks?.includes(pageNum)) {
+      alert(`Page ${pageNum} is already bookmarked!`);
+      return;
+    }
+
     const newBookmarks = [...(book.bookmarks || []), pageNum];
     await updateBookBookmarks(book.id, newBookmarks);
+
     setBook({ ...book, bookmarks: newBookmarks }); // update local state
     alert(`Bookmarked page ${pageNum}`);
   };
@@ -57,6 +84,17 @@ export default function PdfViewer() {
 
     if (pageNum === page && updatedBook.bookmarks.length > 0) {
       setPageNum(updatedBook.bookmarks[0]);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= numPages) {
+      setPageNum(newPage);
+      updateBookLastPage(id, newPage);
+    }
+
+    if (pageRef.current) {
+      pageRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
 
@@ -100,7 +138,7 @@ export default function PdfViewer() {
 
           {pdfUrl && !error && (
             <div className="space-y-6">
-              <div className="flex justify-center items-center">
+              <div ref={pageRef} className="flex justify-center items-center">
                 <div className="border p-2 border-gray-300 rounded-lg shadow-md">
                   <Document
                     file={pdfUrl}
@@ -128,7 +166,7 @@ export default function PdfViewer() {
               {/* Controls */}
               <div className="flex items-center justify-center space-x-4 bg-gray-100 p-4 rounded-lg">
                 <button
-                  onClick={() => setPageNum((p) => Math.max(p - 1, 1))}
+                  onClick={() => handlePageChange(pageNum - 1)}
                   disabled={pageNum <= 1}
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
@@ -141,7 +179,9 @@ export default function PdfViewer() {
                     value={pageNum}
                     onChange={(e) => {
                       const page = parseInt(e.target.value);
-                      if (page >= 1 && page <= numPages) setPageNum(page);
+                      if (page >= 1 && page <= numPages) {
+                        handlePageChange(page);
+                      }
                     }}
                     min={1}
                     max={numPages || 1}
@@ -151,7 +191,7 @@ export default function PdfViewer() {
                 </div>
 
                 <button
-                  onClick={() => setPageNum((p) => Math.min(p + 1, numPages))}
+                  onClick={() => handlePageChange(pageNum + 1)}
                   disabled={pageNum >= numPages}
                   className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
