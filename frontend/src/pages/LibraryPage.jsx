@@ -10,40 +10,33 @@ import {
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { generateThumbnailsForLibrary } from "../utils/generateThumbnail";
+import { Plus } from "lucide-react";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function LibraryPage() {
   const [books, setBooks] = useState([]);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getBooks().then(setBooks);
-    generateThumbnailsForLibrary().then(() => console.log("Done"));
+    async function loadBooks() {
+      setLoading(true);
+      await generateThumbnailsForLibrary();
+      const updatedBooks = await getBooks();
+      setBooks(updatedBooks);
+      setLoading(false);
+    }
+    loadBooks();
   }, []);
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const fileUrl = URL.createObjectURL(file);
+    setLoading(true);
 
-    // Generate first-page thumbnail
-    let thumbnail = null;
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-      const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 0.5 }); // adjust scale for thumbnail
-      const canvas = document.createElement("canvas");
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const context = canvas.getContext("2d");
-      await page.render({ canvasContext: context, viewport }).promise;
-      thumbnail = canvas.toDataURL(); // base64 thumbnail
-    } catch (err) {
-      console.error("Failed to generate thumbnail:", err);
-    }
+    const fileUrl = URL.createObjectURL(file);
 
     const newBook = {
       id: crypto.randomUUID(),
@@ -51,11 +44,17 @@ export default function LibraryPage() {
       fileUrl,
       bookmarks: [],
       file,
-      thumbnail,
+      thumbnail: null,
     };
 
-    await addBook(newBook); // save to IndexedDB
+    await addBook(newBook);
     setBooks((prev) => [...prev, newBook]);
+
+    // Generate thumbnail
+    const updatedBooks = await generateThumbnailsForLibrary();
+    setBooks(updatedBooks);
+
+    setLoading(false);
   };
 
   const handleRemove = async (id) => {
@@ -81,25 +80,33 @@ export default function LibraryPage() {
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-4">📚 My Library</h1>
-
-      <input
-        type="file"
-        accept="application/pdf"
-        onChange={handleUpload}
-        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-      />
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-        {books.map((book) => (
-          <div key={book.id} className="relative">
-            <BookCard
-              book={book}
-              onOpen={() => navigate(`/reader/${book.id}`)}
-              onRemove={() => handleRemove(book.id)}
-            />
-          </div>
-        ))}
+        <label className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-40 cursor-pointer hover:bg-gray-50 transition">
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleUpload}
+            className="hidden"
+          />
+          <Plus className="w-10 h-10 text-gray-500" />
+        </label>
       </div>
+
+      {loading ? (
+        <p className="text-gray-500">Loading...</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {books.map((book) => (
+            <div key={book.id} className="relative">
+              <BookCard
+                book={book}
+                onOpen={() => navigate(`/reader/${book.id}`)}
+                onRemove={() => handleRemove(book.id)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

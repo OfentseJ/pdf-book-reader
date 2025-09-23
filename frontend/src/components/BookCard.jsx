@@ -10,7 +10,7 @@ export default function BookCard({ book, onOpen, onRemove }) {
         />
       ) : (
         <div className="w-full h-40 bg-gray-200 flex items-center justify-center mb-2">
-          <span className="text-gray-500">No Preview</span>
+          <span className="text-gray-500">Loading...</span>
         </div>
       )}
       <h2 className="text-sm font-medium truncate">{book.name}</h2>
