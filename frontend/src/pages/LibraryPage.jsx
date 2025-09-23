@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BookCard from "../components/BookCard";
-import {
-  addBook,
-  getBooks,
-  removeBook,
-  updateBookThumbnail,
-} from "../utils/db";
+import { addBook, getBooks, removeBook, updateBookName } from "../utils/db";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { generateThumbnailsForLibrary } from "../utils/generateThumbnail";
@@ -15,9 +10,10 @@ import { Plus } from "lucide-react";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function LibraryPage() {
-  const [books, setBooks] = useState([]);
   const navigate = useNavigate();
+  const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     async function loadBooks() {
@@ -77,10 +73,26 @@ export default function LibraryPage() {
     setBooks((prev) => prev.filter((b) => b.id !== id));
   };
 
+  const handleRename = async (id, newName) => {
+    const updatedBook = await updateBookName(id, newName);
+    setBooks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, name: updatedBook.name } : b))
+    );
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl mb-4">📚 My Library</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
         <label className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-40 cursor-pointer hover:bg-gray-50 transition">
           <input
             type="file"
@@ -93,18 +105,25 @@ export default function LibraryPage() {
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Loading...</p>
+        <div className="w-full h-screen flex items-center justify-center">
+          <p className="text-gray-500">Loading...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-          {books.map((book) => (
-            <div key={book.id} className="relative">
-              <BookCard
-                book={book}
-                onOpen={() => navigate(`/reader/${book.id}`)}
-                onRemove={() => handleRemove(book.id)}
-              />
-            </div>
-          ))}
+          {books
+            .filter((book) =>
+              book.name.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((book) => (
+              <div key={book.id} className="relative">
+                <BookCard
+                  book={book}
+                  onOpen={() => navigate(`/reader/${book.id}`)}
+                  onRemove={() => handleRemove(book.id)}
+                  onRename={handleRename}
+                />
+              </div>
+            ))}
         </div>
       )}
     </div>

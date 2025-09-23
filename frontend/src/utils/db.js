@@ -61,7 +61,6 @@ export async function updateBookLastPage(id, lastPage) {
   await tx.done;
 }
 
-// db.js
 export async function updateBookThumbnail(bookId, thumbnail) {
   if (!dbPromise) throw new Error("Database not initialized");
 
@@ -75,6 +74,19 @@ export async function updateBookThumbnail(bookId, thumbnail) {
   book.thumbnail = thumbnail;
   await store.put(book);
 
+  await tx.done;
+  return book;
+}
+
+export async function updateBookName(id, newName) {
+  const db = await dbPromise;
+  const tx = db.transaction("books", "readwrite");
+  const store = tx.objectStore("books");
+  const book = await store.get(id);
+  if (book) {
+    book.name = newName;
+    await store.put(book);
+  }
   await tx.done;
   return book;
 }
