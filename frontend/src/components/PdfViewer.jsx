@@ -22,6 +22,7 @@ export default function PdfViewer() {
   const [pageNum, setPageNum] = useState(1);
   const [error, setError] = useState(null);
   const [pdfUrl, setPdfUrl] = useState(null);
+  const [scale, setScale] = useState(1.0);
 
   useEffect(() => {
     if (!id) return;
@@ -144,6 +145,10 @@ export default function PdfViewer() {
                     file={pdfUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
+                    options={{
+                      cMapUrl: "cmaps/",
+                      standardFontDataUrl: "standard_fonts/",
+                    }}
                     loading={
                       <div className="p-8 text-center text-gray-600">
                         Loading PDF...
@@ -152,7 +157,9 @@ export default function PdfViewer() {
                   >
                     <Page
                       pageNumber={pageNum}
+                      renderMode="canvas"
                       width={Math.min(600, window.innerWidth - 100)}
+                      scale={scale}
                       loading={
                         <div className="p-8 text-center text-gray-600">
                           Loading page...
@@ -205,7 +212,29 @@ export default function PdfViewer() {
                   🔖 Bookmark
                 </button>
               </div>
-
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  ➖
+                </button>
+                <span className="text-sm">
+                  Zoom: {(scale * 100).toFixed(0)}%
+                </span>
+                <button
+                  onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  ➕
+                </button>
+                <button
+                  onClick={() => setScale(1.0)}
+                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                >
+                  Reset
+                </button>
+              </div>
               {/* Page Info */}
               <div className="text-center text-gray-600">
                 <p className="text-sm">

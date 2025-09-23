@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BookCard from "../components/BookCard";
-import { addBook, getBooks, removeBook } from "../utils/db";
+import {
+  addBook,
+  getBooks,
+  removeBook,
+  updateBookThumbnail,
+} from "../utils/db";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { generateThumbnailsForLibrary } from "../utils/generateThumbnail";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export default function LibraryPage() {
   const [books, setBooks] = useState([]);
@@ -9,13 +19,31 @@ export default function LibraryPage() {
 
   useEffect(() => {
     getBooks().then(setBooks);
+    generateThumbnailsForLibrary().then(() => console.log("Done"));
   }, []);
 
-  const handleUpload = (e) => {
+  const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const fileUrl = URL.createObjectURL(file);
+
+    // Generate first-page thumbnail
+    let thumbnail = null;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 0.5 }); // adjust scale for thumbnail
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext("2d");
+      await page.render({ canvasContext: context, viewport }).promise;
+      thumbnail = canvas.toDataURL(); // base64 thumbnail
+    } catch (err) {
+      console.error("Failed to generate thumbnail:", err);
+    }
 
     const newBook = {
       id: crypto.randomUUID(),
@@ -23,15 +51,30 @@ export default function LibraryPage() {
       fileUrl,
       bookmarks: [],
       file,
+      thumbnail,
     };
 
-    addBook(newBook).then(() => {
-      setBooks((prev) => [...prev, newBook]);
-    });
+    await addBook(newBook); // save to IndexedDB
+    setBooks((prev) => [...prev, newBook]);
   };
 
   const handleRemove = async (id) => {
+    const bookToRemove = books.find((b) => b.id === id);
+    if (!bookToRemove) return;
+
+    // Revoke object URL to free memory
+    if (bookToRemove.fileUrl) {
+      URL.revokeObjectURL(bookToRemove.fileUrl);
+    }
+
+    // Optional: revoke thumbnail URL if you used object URLs for thumbnails
+    if (bookToRemove.thumbnail) {
+      URL.revokeObjectURL(bookToRemove.thumbnail);
+    }
+
+    // Remove from IndexedDB
     await removeBook(id);
+
     setBooks((prev) => prev.filter((b) => b.id !== id));
   };
 
@@ -52,13 +95,8 @@ export default function LibraryPage() {
             <BookCard
               book={book}
               onOpen={() => navigate(`/reader/${book.id}`)}
+              onRemove={() => handleRemove(book.id)}
             />
-            <button
-              onClick={() => handleRemove(book.id)}
-              className="absolute top-2 right-2 px-2 py-1 text-xs text-white rounded hover:bg-red-600"
-            >
-              ✖
-            </button>
           </div>
         ))}
       </div>
