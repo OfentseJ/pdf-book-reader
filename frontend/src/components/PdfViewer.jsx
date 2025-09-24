@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
@@ -10,6 +10,8 @@ import {
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { useParams } from "react-router-dom";
+import { Edit3, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -23,6 +25,7 @@ export default function PdfViewer() {
   const [error, setError] = useState(null);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [scale, setScale] = useState(1.0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -62,30 +65,34 @@ export default function PdfViewer() {
     setError("Failed to load PDF: " + error.message);
   };
 
+  const documentOptions = useMemo(
+    () => ({
+      cMapUrl: "cmaps/",
+      standardFontDataUrl: "standard_fonts/",
+    }),
+    []
+  );
+
   const bookmarkPage = async () => {
     if (!book) return;
 
-    if (book.bookmarks?.includes(pageNum)) {
+    if (book.bookmarks?.some((b) => b.page === pageNum)) {
       alert(`Page ${pageNum} is already bookmarked!`);
       return;
     }
 
-    const newBookmarks = [...(book.bookmarks || []), pageNum];
+    const newBookmark = { id: uuidv4(), page: pageNum, label: "" };
+    const newBookmarks = [...(book.bookmarks || []), newBookmark];
     await updateBookBookmarks(book.id, newBookmarks);
-
-    setBook({ ...book, bookmarks: newBookmarks }); // update local state
+    setBook({ ...book, bookmarks: newBookmarks });
     alert(`Bookmarked page ${pageNum}`);
   };
 
-  const removeBookmark = async (page) => {
+  const removeBookmark = async (bookmarkId) => {
     if (!book) return;
-
-    const updatedBook = await removeBookBookmark(book.id, page);
-    setBook(updatedBook);
-
-    if (pageNum === page && updatedBook.bookmarks.length > 0) {
-      setPageNum(updatedBook.bookmarks[0]);
-    }
+    const updatedBookmarks = book.bookmarks.filter((b) => b.id !== bookmarkId);
+    await updateBookBookmarks(book.id, updatedBookmarks);
+    setBook({ ...book, bookmarks: updatedBookmarks });
   };
 
   const handlePageChange = (newPage) => {
@@ -102,30 +109,82 @@ export default function PdfViewer() {
   return (
     <div className="flex">
       {/* Bookmarks sidebar */}
-      <div className="w-48 border-r pr-2 p-4 bg-gray-50">
-        <h3 className="font-bold mb-2">Bookmarks</h3>
-        {(!book?.bookmarks || book.bookmarks.length === 0) && (
-          <p className="text-sm text-gray-500">No bookmarks</p>
-        )}
+      <div>
+        {/* Toggle button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="left-4 z-10 bg-gray-500 p-1 rounded"
+        >
+          {sidebarOpen ? (
+            <ChevronLeft size={18} />
+          ) : (
+            <div className="flex items-center justify-center">
+              <ChevronRight size={18} /> <span className="p-2">Bookmarks</span>
+            </div>
+          )}
+        </button>
+        <div
+          className={`transition-all duration-500 ${
+            sidebarOpen ? "w-48" : "w-0"
+          } overflow-hidden border-r bg-gray-50`}
+        >
+          {sidebarOpen && (
+            <div className="p-4">
+              <h3 className="font-bold mb-2">Bookmarks</h3>
+              {(!book?.bookmarks || book.bookmarks.length === 0) && (
+                <p className="text-sm text-gray-500">No bookmarks</p>
+              )}
 
-        <ul className="space-y-1">
-          {book?.bookmarks?.map((p) => (
-            <li key={p} className="flex justify-between items-center">
-              <button
-                onClick={() => setPageNum(p)}
-                className="text-blue-500 underline text-sm"
-              >
-                Page {p}
-              </button>
-              <button
-                onClick={() => removeBookmark(p)}
-                className="ml-2 text-red-500 hover:text-red-700 text-xs"
-              >
-                ✖
-              </button>
-            </li>
-          ))}
-        </ul>
+              <ul className="space-y-2">
+                {book?.bookmarks?.map((bm) => (
+                  <li
+                    key={bm.id}
+                    className="flex justify-between items-center bg-white p-2 rounded shadow-sm hover:bg-gray-100"
+                  >
+                    <button
+                      onClick={() => setPageNum(bm.page)}
+                      className="text-blue-500 text-sm text-left flex-1"
+                    >
+                      {bm.label || `Page ${bm.page}`}
+                    </button>
+
+                    <div className="flex items-center space-x-2">
+                      {/* Edit bookmark label */}
+                      <button
+                        onClick={() => {
+                          const newLabel = prompt(
+                            "Enter a new label:",
+                            bm.label || ""
+                          );
+                          if (newLabel !== null) {
+                            const updatedBookmarks = book.bookmarks.map((b) =>
+                              b.id === bm.id ? { ...b, label: newLabel } : b
+                            );
+                            updateBookBookmarks(book.id, updatedBookmarks);
+                            setBook({ ...book, bookmarks: updatedBookmarks });
+                          }
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                        title="Rename bookmark"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+
+                      {/* Delete bookmark */}
+                      <button
+                        onClick={() => removeBookmark(bm.id)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete bookmark"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* PDF Reader */}
@@ -145,10 +204,7 @@ export default function PdfViewer() {
                     file={pdfUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
-                    options={{
-                      cMapUrl: "cmaps/",
-                      standardFontDataUrl: "standard_fonts/",
-                    }}
+                    options={documentOptions}
                     loading={
                       <div className="p-8 text-center text-gray-600">
                         Loading PDF...
