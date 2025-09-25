@@ -82,14 +82,14 @@ export default function LibraryPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl mb-4">📚 My Library</h1>
+      <h1 className="text-2xl mb-4 font-bold ">📚 My Library</h1>
       <div className="mb-4">
         <input
           type="text"
           placeholder="Search"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300"
+          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:border-blue-300 "
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
