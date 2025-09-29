@@ -42,7 +42,7 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
       )}
       <h2 className="text-sm font-medium truncate">{book.name}</h2>
 
-      {/* Ellipsis and dropdown */}
+      {/* Ellipsis + dropdown */}
       <div ref={menuRef} className="absolute top-2 right-2">
         <button
           onClick={() => setMenuOpen((prev) => !prev)}
@@ -51,36 +51,41 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
           <EllipsisVertical />
         </button>
 
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-            <ul className="py-1 text-sm text-gray-700">
-              <li>
-                <button
-                  onClick={onOpen}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                >
-                  Open
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={handleRename}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                >
-                  Rename
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={onRemove}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
-                >
-                  Delete
-                </button>
-              </li>
-            </ul>
-          </div>
-        )}
+        {/* Dropdown with animation */}
+        <div
+          className={`absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 transform transition-all duration-200 ease-out origin-top ${
+            menuOpen
+              ? "opacity-100 scale-100 translate-y-0"
+              : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+          }`}
+        >
+          <ul className="py-1 text-sm text-gray-700">
+            <li>
+              <button
+                onClick={onOpen}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                Open
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={handleRename}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                Rename
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={onRemove}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
+              >
+                Delete
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
