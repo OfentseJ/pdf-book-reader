@@ -90,3 +90,15 @@ export async function updateBookName(id, newName) {
   await tx.done;
   return book;
 }
+
+export async function updateBookNumPages(id, numPages) {
+  const db = await dbPromise;
+  const tx = db.transaction("books", "readwrite");
+  const store = tx.objectStore("books");
+  const book = await store.get(id);
+  if (!book) throw new Error(`Book ${id} not found`);
+  book.numPages = Number(numPages);
+  await store.put(book);
+  await tx.done;
+  return book;
+}

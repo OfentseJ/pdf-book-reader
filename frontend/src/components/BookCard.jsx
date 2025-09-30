@@ -13,6 +13,13 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
     setMenuOpen(false);
   };
 
+  const last = Number(book?.lastPage) || 0;
+  const total = Number(book?.numPages) || 0;
+  const progress =
+    total > 0
+      ? Math.min(100, Math.max(0, Math.round((last / total) * 100)))
+      : 0;
+
   // Close dropdown if clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -42,11 +49,24 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
       )}
       <h2 className="text-sm font-medium truncate">{book.name}</h2>
 
+      {/* Progress Bar */}
+      {book.numPages > 0 && (
+        <div className="mt-2">
+          <div className="w-full h-2 bg-gray-200 rounded-full">
+            <div
+              className="h-2 bg-blue-500 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">{progress}% read</p>
+        </div>
+      )}
+
       {/* Ellipsis + dropdown */}
       <div ref={menuRef} className="absolute top-2 right-2">
         <button
           onClick={() => setMenuOpen((prev) => !prev)}
-          className="p-1 bg-gray-200 rounded-full"
+          className="p-1 bg-gray-200 rounded-full cursor-pointer"
         >
           <EllipsisVertical />
         </button>

@@ -82,7 +82,7 @@ export default function LibraryPage() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl mb-4 font-bold ">📚 My Library</h1>
+      <h1 className="text-2xl mb-4 font-bold ">📚 Library</h1>
       <div className="mb-4">
         <input
           type="text"

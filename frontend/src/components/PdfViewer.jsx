@@ -4,8 +4,8 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   getBook,
   updateBookBookmarks,
-  removeBookBookmark,
   updateBookLastPage,
+  updateBookNumPages,
 } from "../utils/db";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -57,8 +57,28 @@ export default function PdfViewer() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [pageNum, numPages]);
 
+  useEffect(() => {
+    if (!book) return;
+
+    if (Number(book.lastPage) !== Number(pageNum)) {
+      updateBookLastPage(book.id, pageNum).catch(console.error);
+      setBook((prev) => ({ ...prev, lastPage: pageNum }));
+    }
+  }, [pageNum, book]);
+
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
+
+    if (book) {
+      const current = Number(book.numPages) || 0;
+      if (current !== numPages) {
+        updateBookNumPages(book.id, numPages).then((update) =>
+          setBook((b) => ({ ...b, numPages })).catch(console.error)
+        );
+      } else {
+        setBook((b) => (b ? { ...b, numPages } : b));
+      }
+    }
   };
 
   const onDocumentLoadError = (error) => {
@@ -98,7 +118,6 @@ export default function PdfViewer() {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= numPages) {
       setPageNum(newPage);
-      updateBookLastPage(id, newPage);
     }
 
     if (pageRef.current) {
