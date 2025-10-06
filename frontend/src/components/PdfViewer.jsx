@@ -6,6 +6,7 @@ import {
   updateBookBookmarks,
   updateBookLastPage,
   updateBookNumPages,
+  updateBookLastOpened,
 } from "../utils/db";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -32,7 +33,7 @@ export default function PdfViewer() {
     getBook(id)
       .then((b) => {
         setBook(b);
-
+        updateBookLastOpened(id);
         if (b?.file) {
           setPdfUrl(URL.createObjectURL(b.file));
         }

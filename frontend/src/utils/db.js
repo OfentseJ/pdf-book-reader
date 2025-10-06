@@ -1,31 +1,46 @@
 import { openDB } from "idb";
 
 // Initialize IndexedDB
-export const dbPromise = openDB("pdfBooksDB", 1, {
-  upgrade(db) {
-    if (!db.objectStoreNames.contains("books")) {
-      db.createObjectStore("books", { keyPath: "id" });
-    }
-  },
-});
+const DB_NAME = "libraryDB";
+const STORE_NAME = "books";
+
+export async function initDB() {
+  return openDB(DB_NAME, 1, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, {
+          keyPath: "id",
+          autoIncrement: true,
+        });
+        store.createIndex("name", "name", { unique: false });
+        store.createIndex("addedAt", "addedAt", { unique: false });
+        store.createIndex("lastOpened", "lastOpened", { unique: false });
+      }
+    },
+  });
+}
 
 export async function addBook(book) {
-  const db = await dbPromise;
-  await db.put("books", book);
+  const db = await initDB();
+  return db.add(STORE_NAME, {
+    ...book,
+    addedAt: Date.now(),
+    lastOpened: 0,
+  });
 }
 
 export async function getBooks() {
-  const db = await dbPromise;
+  const db = await initDB();
   return await db.getAll("books");
 }
 
 export async function getBook(id) {
-  const db = await dbPromise;
+  const db = await initDB();
   return await db.get("books", id);
 }
 
 export async function updateBookBookmarks(id, bookmarks) {
-  const db = await dbPromise;
+  const db = await initDB();
   const book = await db.get("books", id);
   if (!book) throw new Error("Book not found");
 
@@ -35,7 +50,7 @@ export async function updateBookBookmarks(id, bookmarks) {
 }
 
 export async function removeBookBookmark(id, pageNum) {
-  const db = await dbPromise;
+  const db = await initDB();
   const book = await db.get("books", id);
   if (!book) throw new Error("Book not found");
 
@@ -45,12 +60,12 @@ export async function removeBookBookmark(id, pageNum) {
 }
 
 export async function removeBook(id) {
-  const db = await dbPromise;
+  const db = await initDB();
   await db.delete("books", id);
 }
 
 export async function updateBookLastPage(id, lastPage) {
-  const db = await dbPromise;
+  const db = await initDB();
   const tx = db.transaction("books", "readwrite");
   const store = tx.objectStore("books");
   const book = await store.get(id);
@@ -62,9 +77,9 @@ export async function updateBookLastPage(id, lastPage) {
 }
 
 export async function updateBookThumbnail(bookId, thumbnail) {
-  if (!dbPromise) throw new Error("Database not initialized");
+  if (!initDB()) throw new Error("Database not initialized");
 
-  const db = await dbPromise;
+  const db = await initDB();
   const tx = db.transaction("books", "readwrite");
   const store = tx.objectStore("books");
 
@@ -79,7 +94,7 @@ export async function updateBookThumbnail(bookId, thumbnail) {
 }
 
 export async function updateBookName(id, newName) {
-  const db = await dbPromise;
+  const db = await initDB();
   const tx = db.transaction("books", "readwrite");
   const store = tx.objectStore("books");
   const book = await store.get(id);
@@ -92,7 +107,7 @@ export async function updateBookName(id, newName) {
 }
 
 export async function updateBookNumPages(id, numPages) {
-  const db = await dbPromise;
+  const db = await initDB();
   const tx = db.transaction("books", "readwrite");
   const store = tx.objectStore("books");
   const book = await store.get(id);
@@ -101,4 +116,13 @@ export async function updateBookNumPages(id, numPages) {
   await store.put(book);
   await tx.done;
   return book;
+}
+
+export async function updateBookLastOpened(id) {
+  const db = await initDB();
+  const book = await db.get(STORE_NAME, id);
+  if (book) {
+    book.lastOpened = Date.now();
+    await db.put(STORE_NAME, book);
+  }
 }

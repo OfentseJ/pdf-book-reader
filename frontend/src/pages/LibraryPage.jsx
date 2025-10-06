@@ -14,6 +14,7 @@ export default function LibraryPage() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("alphabetical");
 
   useEffect(() => {
     async function loadBooks() {
@@ -25,6 +26,21 @@ export default function LibraryPage() {
     }
     loadBooks();
   }, []);
+
+  const sortedBooks = [...books].sort((a, b) => {
+    switch (sortOption) {
+      case "alphabetical":
+        return a.name.localeCompare(b.name);
+      case "reverse-alphabetical":
+        return b.name.localeCompare(a.name);
+      case "recently-added":
+        return b.addedAt - a.addedAt;
+      case "last-opened":
+        return a.lastOpened - a.lastOpened;
+      default:
+        return 0;
+    }
+  });
 
   const handleUpload = async (e) => {
     const file = e.target.files[0];
@@ -103,6 +119,16 @@ export default function LibraryPage() {
           <Plus className="w-10 h-10 text-gray-500" />
         </label>
       </div>
+      <select
+        value={sortOption}
+        onChange={(e) => setSortOption(e.target.value)}
+        className="mt-4 px-2 py-1 border-0 rounded-2xl"
+      >
+        <option value="alphabetical">A–Z</option>
+        <option value="reverse-alphabetical">Z–A</option>
+        <option value="recently-added">Recently Added</option>
+        <option value="last-opened">Last Opened</option>
+      </select>
 
       {loading ? (
         <div className="w-full h-screen flex items-center justify-center">
