@@ -10,14 +10,27 @@ import {
 } from "../utils/db";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { useParams } from "react-router-dom";
-import { Edit3, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Edit3,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Bookmark,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Menu,
+  X,
+  ArrowLeft,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export default function PdfViewer() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const pageRef = useRef(null);
 
   const [book, setBook] = useState(null);
@@ -73,9 +86,9 @@ export default function PdfViewer() {
     if (book) {
       const current = Number(book.numPages) || 0;
       if (current !== numPages) {
-        updateBookNumPages(book.id, numPages).then((update) =>
-          setBook((b) => ({ ...b, numPages })).catch(console.error)
-        );
+        updateBookNumPages(book.id, numPages)
+          .then((update) => setBook((b) => ({ ...b, numPages })))
+          .catch(console.error);
       } else {
         setBook((b) => (b ? { ...b, numPages } : b));
       }
@@ -106,7 +119,6 @@ export default function PdfViewer() {
     const newBookmarks = [...(book.bookmarks || []), newBookmark];
     await updateBookBookmarks(book.id, newBookmarks);
     setBook({ ...book, bookmarks: newBookmarks });
-    alert(`Bookmarked page ${pageNum}`);
   };
 
   const removeBookmark = async (bookmarkId) => {
@@ -126,119 +138,215 @@ export default function PdfViewer() {
     }
   };
 
-  return (
-    <div className="flex">
-      {/* Bookmarks sidebar */}
-      <div>
-        {/* Toggle button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="left-4 z-10 bg-gray-500 p-1 rounded"
-        >
-          {sidebarOpen ? (
-            <ChevronLeft size={18} />
-          ) : (
-            <div className="flex items-center justify-center">
-              <ChevronRight size={18} /> <span className="p-2">Bookmarks</span>
-            </div>
-          )}
-        </button>
-        <div
-          className={`transition-all duration-500 ${
-            sidebarOpen ? "w-48" : "w-0"
-          } overflow-hidden border-r bg-gray-50`}
-        >
-          {sidebarOpen && (
-            <div className="p-4">
-              <h3 className="font-bold mb-2">Bookmarks</h3>
-              {(!book?.bookmarks || book.bookmarks.length === 0) && (
-                <p className="text-sm text-gray-500">No bookmarks</p>
-              )}
+  const updateBookmarkLabel = async (bookmarkId, newLabel) => {
+    if (!book) return;
+    const updatedBookmarks = book.bookmarks.map((b) =>
+      b.id === bookmarkId ? { ...b, label: newLabel } : b
+    );
+    await updateBookBookmarks(book.id, updatedBookmarks);
+    setBook({ ...book, bookmarks: updatedBookmarks });
+  };
 
-              <ul className="space-y-2">
-                {book?.bookmarks?.map((bm) => (
-                  <li
-                    key={bm.id}
-                    className="flex justify-between items-center bg-white p-2 rounded shadow-sm hover:bg-gray-100"
-                  >
-                    <button
-                      onClick={() => setPageNum(bm.page)}
-                      className="text-blue-500 text-sm text-left flex-1"
-                    >
-                      {bm.label || `Page ${bm.page}`}
-                    </button>
-
-                    <div className="flex items-center space-x-2">
-                      {/* Edit bookmark label */}
-                      <button
-                        onClick={() => {
-                          const newLabel = prompt(
-                            "Enter a new label:",
-                            bm.label || ""
-                          );
-                          if (newLabel !== null) {
-                            const updatedBookmarks = book.bookmarks.map((b) =>
-                              b.id === bm.id ? { ...b, label: newLabel } : b
-                            );
-                            updateBookBookmarks(book.id, updatedBookmarks);
-                            setBook({ ...book, bookmarks: updatedBookmarks });
-                          }
-                        }}
-                        className="text-gray-500 hover:text-gray-700"
-                        title="Rename bookmark"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-
-                      {/* Delete bookmark */}
-                      <button
-                        onClick={() => removeBookmark(bm.id)}
-                        className="text-red-500 hover:text-red-700"
-                        title="Delete bookmark"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+  if (!book) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Loading book...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* PDF Reader */}
-      <div className="flex-1 max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div
+        className={`${
+          sidebarOpen ? "w-80" : "w-0"
+        } transition-all duration-300 ease-in-out overflow-hidden bg-white border-r border-gray-200 shadow-lg flex flex-col`}
+      >
+        {sidebarOpen && (
+          <div className="flex-1 flex flex-col h-full">
+            {/* Sidebar Header */}
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                  <Bookmark className="w-5 h-5 mr-2 text-blue-600" />
+                  Bookmarks
+                </h3>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-1 rounded-lg hover:bg-white/50 transition-colors"
+                  title="Close sidebar"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">
+                {book.bookmarks?.length || 0} saved
+              </p>
             </div>
-          )}
 
-          {pdfUrl && !error && (
-            <div className="space-y-6">
-              <div ref={pageRef} className="flex justify-center items-center">
-                <div className="border p-2 border-gray-300 rounded-lg shadow-md">
+            {/* Bookmarks List */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {!book?.bookmarks || book.bookmarks.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="inline-block p-4 bg-gray-100 rounded-full mb-3">
+                    <Bookmark className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 mb-1">No bookmarks yet</p>
+                  <p className="text-xs text-gray-400">
+                    Click the bookmark button to save pages
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {book.bookmarks.map((bm) => (
+                    <li
+                      key={bm.id}
+                      className={`group bg-white border rounded-lg hover:shadow-md transition-all ${
+                        bm.page === pageNum
+                          ? "border-blue-500 ring-2 ring-blue-100"
+                          : "border-gray-200"
+                      }`}
+                    >
+                      <button
+                        onClick={() => setPageNum(bm.page)}
+                        className="w-full text-left p-3"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {bm.label || `Page ${bm.page}`}
+                            </p>
+                            {bm.label && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Page {bm.page}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newLabel = prompt(
+                                  "Enter bookmark name:",
+                                  bm.label || ""
+                                );
+                                if (newLabel !== null) {
+                                  updateBookmarkLabel(bm.id, newLabel);
+                                }
+                              }}
+                              className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+                              title="Rename"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeBookmark(bm.id);
+                              }}
+                              className="p-1.5 rounded hover:bg-red-50 text-red-600"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 font-medium"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Library</span>
+                </button>
+                {!sidebarOpen && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors font-medium"
+                  >
+                    <Menu className="w-4 h-4" />
+                    <span>Bookmarks</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex-1 mx-6 max-w-md">
+                <h1 className="text-lg font-semibold text-gray-900 truncate">
+                  📖 {book.name}
+                </h1>
+              </div>
+              <div className="text-sm text-gray-600">
+                Page {pageNum} of {numPages || "?"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* PDF Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-100">
+          {error ? (
+            <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-red-600 text-xl">⚠</span>
+                </div>
+                <div>
+                  <h3 className="text-red-900 font-semibold mb-1">
+                    Error Loading PDF
+                  </h3>
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              </div>
+            </div>
+          ) : pdfUrl ? (
+            <div className="py-8">
+              <div
+                ref={pageRef}
+                className="flex justify-center items-center mb-6"
+              >
+                <div className="bg-white rounded-lg shadow-xl overflow-hidden">
                   <Document
                     file={pdfUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     options={documentOptions}
                     loading={
-                      <div className="p-8 text-center text-gray-600">
-                        Loading PDF...
+                      <div className="p-12 text-center">
+                        <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
+                        <p className="text-gray-600">Loading document...</p>
                       </div>
                     }
                   >
                     <Page
                       pageNumber={pageNum}
                       renderMode="canvas"
-                      width={Math.min(600, window.innerWidth - 100)}
+                      width={Math.min(800, window.innerWidth - 100)}
                       scale={scale}
                       loading={
-                        <div className="p-8 text-center text-gray-600">
-                          Loading page...
+                        <div className="p-12 text-center">
+                          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                          <p className="text-gray-600 text-sm">
+                            Loading page...
+                          </p>
                         </div>
                       }
                     />
@@ -246,79 +354,90 @@ export default function PdfViewer() {
                 </div>
               </div>
 
-              {/* Controls */}
-              <div className="flex items-center justify-center space-x-4 bg-gray-100 p-4 rounded-lg">
-                <button
-                  onClick={() => handlePageChange(pageNum - 1)}
-                  disabled={pageNum <= 1}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  ← Previous
-                </button>
+              {/* Fixed Bottom Controls */}
+              <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+                <div className="max-w-4xl mx-auto px-6 py-4">
+                  {/* Navigation Controls */}
+                  <div className="flex items-center justify-center space-x-4 mb-3">
+                    <button
+                      onClick={() => handlePageChange(pageNum - 1)}
+                      disabled={pageNum <= 1}
+                      className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      title="Previous page"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
 
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={pageNum}
-                    onChange={(e) => {
-                      const page = parseInt(e.target.value);
-                      if (page >= 1 && page <= numPages) {
-                        handlePageChange(page);
-                      }
-                    }}
-                    min={1}
-                    max={numPages || 1}
-                    className="w-16 px-2 py-1 text-center border border-gray-300 rounded"
-                  />
-                  <span className="text-gray-600">of {numPages || "?"}</span>
+                    <div className="flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg">
+                      <input
+                        type="number"
+                        value={pageNum}
+                        onChange={(e) => {
+                          const page = parseInt(e.target.value);
+                          if (page >= 1 && page <= numPages) {
+                            handlePageChange(page);
+                          }
+                        }}
+                        min={1}
+                        max={numPages || 1}
+                        className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-gray-600 font-medium">
+                        / {numPages || "?"}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(pageNum + 1)}
+                      disabled={pageNum >= numPages}
+                      className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      title="Next page"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-300"></div>
+
+                    <button
+                      onClick={bookmarkPage}
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                    >
+                      <Bookmark className="w-4 h-4" />
+                      <span>Bookmark</span>
+                    </button>
+                  </div>
+
+                  {/* Zoom Controls */}
+                  <div className="flex items-center justify-center space-x-2">
+                    <button
+                      onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
+                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                      title="Zoom out"
+                    >
+                      <ZoomOut className="w-4 h-4 text-gray-700" />
+                    </button>
+                    <span className="text-sm font-medium text-gray-600 min-w-[80px] text-center">
+                      {(scale * 100).toFixed(0)}% zoom
+                    </span>
+                    <button
+                      onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
+                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                      title="Zoom in"
+                    >
+                      <ZoomIn className="w-4 h-4 text-gray-700" />
+                    </button>
+                    <button
+                      onClick={() => setScale(1.0)}
+                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                      title="Reset zoom"
+                    >
+                      <RotateCcw className="w-4 h-4 text-gray-700" />
+                    </button>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => handlePageChange(pageNum + 1)}
-                  disabled={pageNum >= numPages}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  Next →
-                </button>
-
-                <button
-                  onClick={bookmarkPage}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  🔖 Bookmark
-                </button>
-              </div>
-              <div className="flex items-center justify-center space-x-2">
-                <button
-                  onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
-                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  ➖
-                </button>
-                <span className="text-sm">
-                  Zoom: {(scale * 100).toFixed(0)}%
-                </span>
-                <button
-                  onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
-                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  ➕
-                </button>
-                <button
-                  onClick={() => setScale(1.0)}
-                  className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                  Reset
-                </button>
-              </div>
-              {/* Page Info */}
-              <div className="text-center text-gray-600">
-                <p className="text-sm">
-                  File: {book.name} • Page {pageNum} of {numPages}
-                </p>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { EllipsisVertical } from "lucide-react";
+import { MoreVertical, BookOpen, Edit3, Trash2, FileText } from "lucide-react";
 
 export default function BookCard({ book, onOpen, onRemove, onRename }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const menuRef = useRef(null);
 
   const handleRename = () => {
@@ -34,78 +35,182 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
   }, []);
 
   return (
-    <div className="rounded-2xl shadow-lg p-4 cursor-pointer relative">
-      {book.thumbnail ? (
-        <img
-          onClick={onOpen}
-          src={book.thumbnail}
-          alt={`${book.name} thumbnail`}
-          className="w-full h-100 object-cover mb-2 rounded"
-        />
-      ) : (
-        <div className="w-full h-40 bg-gray-200 flex items-center justify-center mb-2">
-          <span className="text-gray-500">No Preview</span>
-        </div>
-      )}
-      <h2 className="text-sm font-medium truncate">{book.name}</h2>
-
-      {/* Progress Bar */}
-      {book.numPages > 0 && (
-        <div className="mt-2">
-          <div className="w-full h-2 bg-gray-200 rounded-full">
-            <div
-              className="h-2 bg-blue-500 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            ></div>
+    <div
+      className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Thumbnail Section */}
+      <div
+        onClick={onOpen}
+        className="relative cursor-pointer overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200"
+      >
+        {book.thumbnail ? (
+          <img
+            src={book.thumbnail}
+            alt={`${book.name} thumbnail`}
+            className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-64 flex flex-col items-center justify-center">
+            <FileText className="w-16 h-16 text-gray-400 mb-2" />
+            <span className="text-sm text-gray-500 font-medium">
+              No Preview
+            </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">{progress}% read</p>
-        </div>
-      )}
+        )}
 
-      {/* Ellipsis + dropdown */}
-      <div ref={menuRef} className="absolute top-2 right-2">
-        <button
-          onClick={() => setMenuOpen((prev) => !prev)}
-          className="p-1 bg-gray-200 rounded-full cursor-pointer"
-        >
-          <EllipsisVertical />
-        </button>
-
-        {/* Dropdown with animation */}
+        {/* Hover Overlay */}
         <div
-          className={`absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 transform transition-all duration-200 ease-out origin-top ${
-            menuOpen
-              ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+          className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
+            isHovered ? "opacity-100" : "opacity-0"
           }`}
         >
-          <ul className="py-1 text-sm text-gray-700">
-            <li>
-              <button
-                onClick={onOpen}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Open
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={handleRename}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Rename
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={onRemove}
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500"
-              >
-                Delete
-              </button>
-            </li>
-          </ul>
+          <div className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow-lg">
+            <BookOpen className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-semibold text-gray-900">
+              Open Book
+            </span>
+          </div>
         </div>
+
+        {/* Options Menu Button */}
+        <div
+          ref={menuRef}
+          className={`absolute top-3 right-3 transition-opacity duration-200 ${
+            isHovered || menuOpen ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            className="p-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white transition-colors"
+          >
+            <MoreVertical className="w-5 h-5 text-gray-700" />
+          </button>
+
+          {/* Dropdown Menu */}
+          <div
+            className={`absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl z-20 transform transition-all duration-200 ease-out origin-top-right ${
+              menuOpen
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+            }`}
+          >
+            <ul className="py-2">
+              <li>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpen();
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <BookOpen className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Open
+                  </span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename();
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <Edit3 className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Rename
+                  </span>
+                </button>
+              </li>
+              <li className="border-t border-gray-100 mt-1 pt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (
+                      confirm(`Are you sure you want to delete "${book.name}"?`)
+                    ) {
+                      onRemove();
+                    }
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
+                >
+                  <Trash2 className="w-4 h-4 text-red-600" />
+                  <span className="text-sm font-medium text-red-600">
+                    Delete
+                  </span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Progress Badge */}
+        {total > 0 && progress > 0 && (
+          <div className="absolute bottom-3 left-3">
+            <div className="px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
+              <span className="text-xs font-bold text-blue-600">
+                {progress}%
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Book Info Section */}
+      <div className="p-4">
+        <h3
+          className="text-sm font-semibold text-gray-900 truncate mb-3"
+          title={book.name}
+        >
+          {book.name}
+        </h3>
+
+        {/* Progress Bar */}
+        {total > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span className="font-medium">
+                {last} / {total} pages
+              </span>
+              <span className="text-gray-500">{progress}%</span>
+            </div>
+            <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              >
+                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Status Badge */}
+        {total > 0 && (
+          <div className="mt-3 flex items-center">
+            {progress === 0 ? (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                Not started
+              </span>
+            ) : progress === 100 ? (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                ✓ Completed
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                In progress
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
