@@ -32,6 +32,7 @@ export default function PdfViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const pageRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   const [book, setBook] = useState(null);
   const [numPages, setNumPages] = useState(null);
@@ -64,8 +65,57 @@ export default function PdfViewer() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") handlePageChange(pageNum - 1);
-      if (e.key === "ArrowRight") handlePageChange(pageNum + 1);
+      const scrollContainer = scrollContainerRef.current;
+      if (!scrollContainer) return;
+
+      // Page navigation
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handlePageChange(pageNum - 1);
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handlePageChange(pageNum + 1);
+      }
+
+      // Scroll navigation
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        scrollContainer.scrollBy({ top: -100, behavior: "smooth" });
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        scrollContainer.scrollBy({ top: 100, behavior: "smooth" });
+      }
+
+      // Page Up/Down for larger scrolls
+      if (e.key === "PageUp") {
+        e.preventDefault();
+        scrollContainer.scrollBy({
+          top: -scrollContainer.clientHeight * 0.8,
+          behavior: "smooth",
+        });
+      }
+      if (e.key === "PageDown") {
+        e.preventDefault();
+        scrollContainer.scrollBy({
+          top: scrollContainer.clientHeight * 0.8,
+          behavior: "smooth",
+        });
+      }
+
+      // Home/End keys
+      if (e.key === "Home") {
+        e.preventDefault();
+        scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      if (e.key === "End") {
+        e.preventDefault();
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: "smooth",
+        });
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -87,7 +137,7 @@ export default function PdfViewer() {
       const current = Number(book.numPages) || 0;
       if (current !== numPages) {
         updateBookNumPages(book.id, numPages)
-          .then((update) => setBook((b) => ({ ...b, numPages })))
+          .then(() => setBook((b) => ({ ...b, numPages })))
           .catch(console.error);
       } else {
         setBook((b) => (b ? { ...b, numPages } : b));
@@ -302,7 +352,10 @@ export default function PdfViewer() {
         </div>
 
         {/* PDF Content */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto bg-gray-100 pb-32"
+        >
           {error ? (
             <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start space-x-3">
@@ -353,91 +406,91 @@ export default function PdfViewer() {
                   </Document>
                 </div>
               </div>
-
-              {/* Fixed Bottom Controls */}
-              <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-                <div className="max-w-4xl mx-auto px-6 py-4">
-                  {/* Navigation Controls */}
-                  <div className="flex items-center justify-center space-x-4 mb-3">
-                    <button
-                      onClick={() => handlePageChange(pageNum - 1)}
-                      disabled={pageNum <= 1}
-                      className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                      title="Previous page"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-
-                    <div className="flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg">
-                      <input
-                        type="number"
-                        value={pageNum}
-                        onChange={(e) => {
-                          const page = parseInt(e.target.value);
-                          if (page >= 1 && page <= numPages) {
-                            handlePageChange(page);
-                          }
-                        }}
-                        min={1}
-                        max={numPages || 1}
-                        className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-gray-600 font-medium">
-                        / {numPages || "?"}
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handlePageChange(pageNum + 1)}
-                      disabled={pageNum >= numPages}
-                      className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                      title="Next page"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-
-                    <div className="w-px h-8 bg-gray-300"></div>
-
-                    <button
-                      onClick={bookmarkPage}
-                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                    >
-                      <Bookmark className="w-4 h-4" />
-                      <span>Bookmark</span>
-                    </button>
-                  </div>
-
-                  {/* Zoom Controls */}
-                  <div className="flex items-center justify-center space-x-2">
-                    <button
-                      onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                      title="Zoom out"
-                    >
-                      <ZoomOut className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <span className="text-sm font-medium text-gray-600 min-w-[80px] text-center">
-                      {(scale * 100).toFixed(0)}% zoom
-                    </span>
-                    <button
-                      onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                      title="Zoom in"
-                    >
-                      <ZoomIn className="w-4 h-4 text-gray-700" />
-                    </button>
-                    <button
-                      onClick={() => setScale(1.0)}
-                      className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
-                      title="Reset zoom"
-                    >
-                      <RotateCcw className="w-4 h-4 text-gray-700" />
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           ) : null}
+        </div>
+
+        {/* Fixed Bottom Controls */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-center space-x-4 mb-3">
+              <button
+                onClick={() => handlePageChange(pageNum - 1)}
+                disabled={pageNum <= 1}
+                className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center space-x-3 bg-gray-50 px-4 py-2 rounded-lg">
+                <input
+                  type="number"
+                  value={pageNum}
+                  onChange={(e) => {
+                    const page = parseInt(e.target.value);
+                    if (page >= 1 && page <= numPages) {
+                      handlePageChange(page);
+                    }
+                  }}
+                  min={1}
+                  max={numPages || 1}
+                  className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-gray-600 font-medium">
+                  / {numPages || "?"}
+                </span>
+              </div>
+
+              <button
+                onClick={() => handlePageChange(pageNum + 1)}
+                disabled={pageNum >= numPages}
+                className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              <div className="w-px h-8 bg-gray-300"></div>
+
+              <button
+                onClick={bookmarkPage}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                <Bookmark className="w-4 h-4" />
+                <span>Bookmark</span>
+              </button>
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="flex items-center justify-center space-x-2">
+              <button
+                onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                title="Zoom out"
+              >
+                <ZoomOut className="w-4 h-4 text-gray-700" />
+              </button>
+              <span className="text-sm font-medium text-gray-600 min-w-[80px] text-center">
+                {(scale * 100).toFixed(0)}% zoom
+              </span>
+              <button
+                onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                title="Zoom in"
+              >
+                <ZoomIn className="w-4 h-4 text-gray-700" />
+              </button>
+              <button
+                onClick={() => setScale(1.0)}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+                title="Reset zoom"
+              >
+                <RotateCcw className="w-4 h-4 text-gray-700" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
