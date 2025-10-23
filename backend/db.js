@@ -9,8 +9,10 @@ const pool = mysql.createPool({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10, // allows up to 10 concurrent connections
+  connectionLimit: 10,
   queueLimit: 0,
 });
+
+console.log("Connected to MySQL✅");
 
 export default pool;
