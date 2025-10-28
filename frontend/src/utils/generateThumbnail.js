@@ -5,10 +5,25 @@ import { updateBookThumbnail } from "../utils/db";
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export async function generateThumbnailForBook(book) {
-  if (!book.file) return book;
-
   try {
-    const arrayBuffer = await book.file.arrayBuffer();
+    let fileToUse = book.file;
+
+    // 1️⃣ If no local file but there’s a fileUrl, fetch it
+    if (!fileToUse && book.fileUrl) {
+      const response = await fetch(book.fileUrl);
+      const blob = await response.blob();
+      fileToUse = new File([blob], `${book.name || "book"}.pdf`, {
+        type: "application/pdf",
+      });
+    }
+
+    if (!fileToUse) {
+      console.warn(`No file available for ${book.name}`);
+      return book;
+    }
+
+    // 2️⃣ Generate thumbnail from PDF
+    const arrayBuffer = await fileToUse.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     const page = await pdf.getPage(1);
 
@@ -22,9 +37,10 @@ export async function generateThumbnailForBook(book) {
 
     const thumbnail = canvas.toDataURL("image/png");
 
-    // Update IndexedDB
+    // 3️⃣ Save to IndexedDB (if possible)
     await updateBookThumbnail(book.id, thumbnail);
 
+    // 4️⃣ Return updated book object
     return { ...book, thumbnail };
   } catch (err) {
     console.error(`Failed to generate thumbnail for ${book.name}`, err);

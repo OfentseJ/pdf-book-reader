@@ -48,11 +48,13 @@ export default function PdfViewer() {
 
     async function loadBook() {
       try {
-        const b = await getBook(id);
+        const bookId = isNaN(id) ? id : Number(id);
+
+        const b = await getBook(bookId);
         if (!b) throw new Error("Book not found");
 
         setBook(b);
-        updateBookLastOpened(id);
+        updateBookLastOpened(bookId);
 
         let fileToOpen = b.file;
 

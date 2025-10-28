@@ -29,43 +29,55 @@ export default function LibraryPage() {
       setLoading(true);
 
       try {
+        // 1️⃣ Fetch books from backend
         const remoteBooks = await fetchMyBooks(token);
+
+        // Normalize all remote books
         const normalizedBooks = remoteBooks.map(normalizeBook);
 
         const booksWithFiles = [];
 
         for (const book of normalizedBooks) {
-          // Check if book already exists locally
+          // 2️⃣ Check if it exists locally
           const existingBook = await getBook(book.id);
-          if (existingBook?.file) {
+
+          if (existingBook && existingBook.file) {
+            // Already stored with file
             booksWithFiles.push(existingBook);
             continue;
           }
 
-          let fileToSave = book.file;
-
-          // If no file, fetch from URL
-          if (!fileToSave && book.url) {
-            const response = await fetch(book.url);
-            const blob = await response.blob();
-            fileToSave = new File([blob], book.title || "book.pdf", {
-              type: "application/pdf",
-            });
+          // 3️⃣ If no file locally, fetch from backend (fileUrl)
+          let fileBlob = existingBook?.file || null;
+          if (!fileBlob && book.fileUrl) {
+            try {
+              const response = await fetch(book.fileUrl);
+              fileBlob = await response.blob();
+            } catch (fetchErr) {
+              console.warn(`Could not fetch file for ${book.name}:`, fetchErr);
+            }
           }
 
-          const bookWithFile = { ...book, file: fileToSave };
+          // 4️⃣ Build complete book object (for saving)
+          const bookToSave = {
+            ...book,
+            file: fileBlob
+              ? new File([fileBlob], `${book.name}.pdf`, {
+                  type: "application/pdf",
+                })
+              : null,
+          };
 
-          // Save to IndexedDB for offline
-          await addBook(bookWithFile);
+          // 5️⃣ Save (or overwrite) in IndexedDB
+          await addBook(bookToSave);
 
-          // Generate thumbnail for this book
-          const bookWithThumbnail = await generateThumbnailForBook(
-            bookWithFile
-          );
+          // 6️⃣ Generate thumbnail if needed
+          const withThumb = await generateThumbnailForBook(bookToSave);
 
-          booksWithFiles.push(bookWithThumbnail);
+          booksWithFiles.push(withThumb);
         }
 
+        // 7️⃣ Update UI
         setBooks(booksWithFiles);
       } catch (err) {
         console.warn("Backend fetch failed, using local IndexedDB:", err);
@@ -106,32 +118,29 @@ export default function LibraryPage() {
     if (!file) return;
 
     setLoading(true);
-
     try {
-      // 1️⃣ Upload to backend
+      // 1️⃣ Upload file to backend
       const result = await uploadBook(file, token);
-      const uploadedBook = result.book;
+      const uploadedBook = result.book || result;
 
-      // 2️⃣ Normalize book for IndexedDB
+      // 2️⃣ Normalize using the CORRECT property names from backend
       const normalized = normalizeBook({
-        book_id: uploadedBook.book_id,
-        title: uploadedBook.name,
-        url: uploadedBook.url,
+        id: uploadedBook.id, // ✅ Use 'id' not 'book_id'
+        book_id: uploadedBook.id, // ✅ Set book_id for backend reference
+        name: uploadedBook.name, // ✅ Use 'name' not 'title'
+        fileUrl: uploadedBook.url, // ✅ Use consistent naming
+        file, // keep local file for viewing
         addedAt: Date.now(),
-        lastOpened: 0,
-        bookmarks: [],
-        thumbnail: null,
-        file,
       });
 
-      // 3️⃣ Save to IndexedDB
+      // 3️⃣ Save locally
       await addBook(normalized);
 
-      // 4️⃣ Generate thumbnail for **this single book**
-      const bookWithThumbnail = await generateThumbnailForBook(normalized);
+      // 4️⃣ Generate thumbnail
+      const bookWithThumb = await generateThumbnailForBook(normalized);
 
-      // 5️⃣ Add to frontend state
-      setBooks((prev) => [...prev, bookWithThumbnail]);
+      // 5️⃣ Update UI
+      setBooks((prev) => [...prev, bookWithThumb]);
     } catch (err) {
       console.error("Upload failed:", err);
       alert("Failed to upload book");

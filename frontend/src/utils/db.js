@@ -21,12 +21,13 @@ export async function initDB() {
 
 export async function addBook(book) {
   const db = await initDB();
-  const existing = await db.get("books", book.id);
-  if (!existing) {
-    await db.add("books", book);
-  } else {
-    await db.put("books", book);
-  }
+  const tx = db.transaction("books", "readwrite");
+  const store = tx.objectStore("books");
+
+  await store.put(book);
+
+  await tx.done;
+  return book;
 }
 
 export async function getBooks() {

@@ -34,14 +34,24 @@ export async function uploadBook(file, token) {
 
 export function normalizeBook(rawBook) {
   return {
+    // Local unique ID for IndexedDB
     id: rawBook.book_id || rawBook.id || crypto.randomUUID(),
+
+    // Backend ID (for sync/delete later)
+    book_id: rawBook.book_id || null,
+
+    // Basic book info
     name: rawBook.title || rawBook.name || "Untitled",
     fileUrl: rawBook.url || rawBook.cloudinary_url || null,
+
+    // PDF file (Blob) — only present for locally uploaded books
+    file: rawBook.file || null,
+
+    // Other data
     bookmarks: rawBook.bookmarks || [],
     thumbnail: rawBook.thumbnail || null,
-    uploaded: rawBook.uploaded || false,
-    cloudinaryId: rawBook.book_id || rawBook.cloudinaryId || null,
     addedAt: rawBook.addedAt || Date.now(),
     lastOpened: rawBook.lastOpened || 0,
+    uploaded: rawBook.uploaded ?? true,
   };
 }
