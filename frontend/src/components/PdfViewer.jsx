@@ -7,6 +7,7 @@ import {
   updateBookLastPage,
   updateBookNumPages,
   updateBookLastOpened,
+  addBook,
 } from "../utils/db";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -44,19 +45,40 @@ export default function PdfViewer() {
 
   useEffect(() => {
     if (!id) return;
-    getBook(id)
-      .then((b) => {
+
+    async function loadBook() {
+      try {
+        const b = await getBook(id);
+        if (!b) throw new Error("Book not found");
+
         setBook(b);
         updateBookLastOpened(id);
-        if (b?.file) {
-          setPdfUrl(URL.createObjectURL(b.file));
+
+        let fileToOpen = b.file;
+
+        // Fallback: fetch file from URL if not saved locally
+        if (!fileToOpen && b.fileUrl) {
+          const response = await fetch(b.fileUrl);
+          const blob = await response.blob();
+          fileToOpen = new File([blob], b.title || "book.pdf", {
+            type: "application/pdf",
+          });
+
+          // Optionally: save locally for offline use
+          const bookWithFile = { ...b, file: fileToOpen };
+          await addBook(bookWithFile);
+          setBook(bookWithFile);
         }
 
-        if (b?.lastPage) {
-          setPageNum(b.lastPage);
-        }
-      })
-      .catch(console.error);
+        if (fileToOpen) setPdfUrl(URL.createObjectURL(fileToOpen));
+        if (b.lastPage) setPageNum(b.lastPage);
+      } catch (err) {
+        console.error(err);
+        setBook(null);
+      }
+    }
+
+    loadBook();
 
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
@@ -323,7 +345,7 @@ export default function PdfViewer() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate("/library")}
                   className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700 font-medium"
                 >
                   <ArrowLeft className="w-4 h-4" />

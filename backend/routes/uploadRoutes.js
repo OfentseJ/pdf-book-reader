@@ -1,19 +1,22 @@
 import express from "express";
 import multer from "multer";
-import fs from "fs";
+import fs from "fs/promises";
 import cloudinary from "../cloudinaryConfig.js";
 import db from "../db.js";
-import { verifyToken } from "../middleware/authMiddleware.js"; // <-- import middleware
-
+import { verifyToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
 // Upload file (protected)
 router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
     const filePath = req.file.path;
 
-    // Upload file to Cloudinary
+    // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(filePath, {
       resource_type: "raw",
       folder: "pdf-reader",
@@ -21,20 +24,23 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       unique_filename: false,
     });
 
-    // Delete local file
-    fs.unlinkSync(filePath);
+    // Clean up local file
+    await fs.unlink(filePath);
 
-    // Save record in MySQL using logged-in user ID
-    const [resultInsert] = await db.execute(
+    // Save in database
+    const [insertResult] = await db.execute(
       "INSERT INTO books (user_id, title, cloudinary_url) VALUES (?, ?, ?)",
       [req.user.id, req.file.originalname, result.secure_url]
     );
 
     res.json({
-      message: "File uploaded and saved successfully",
-      book_id: resultInsert.insertId,
-      title: req.file.originalname,
-      url: result.secure_url,
+      success: true,
+      book: {
+        id: insertResult.insertId,
+        name: req.file.originalname,
+        url: result.secure_url,
+        uploaded_at: new Date(),
+      },
     });
   } catch (error) {
     console.error(error);

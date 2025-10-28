@@ -10,7 +10,6 @@ export async function initDB() {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, {
           keyPath: "id",
-          autoIncrement: true,
         });
         store.createIndex("name", "name", { unique: false });
         store.createIndex("addedAt", "addedAt", { unique: false });
@@ -22,11 +21,12 @@ export async function initDB() {
 
 export async function addBook(book) {
   const db = await initDB();
-  return db.add(STORE_NAME, {
-    ...book,
-    addedAt: Date.now(),
-    lastOpened: 0,
-  });
+  const existing = await db.get("books", book.id);
+  if (!existing) {
+    await db.add("books", book);
+  } else {
+    await db.put("books", book);
+  }
 }
 
 export async function getBooks() {

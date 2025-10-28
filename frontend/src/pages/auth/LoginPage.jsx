@@ -28,7 +28,7 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
         setMessage("✅ Login successful! Redirecting...");
         // Redirect to dashboard after login
-        window.location.href = "/my-books";
+        window.location.href = "/library";
       } else {
         setMessage(`❌ ${data.message || "Login failed"}`);
       }

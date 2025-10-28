@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PdfViewer from "../components/PdfViewer";
 import { getBook } from "../utils/db";
@@ -49,12 +49,11 @@ export default function ReaderPage() {
             We couldn't find the book you're looking for. It may have been
             removed or doesn't exist.
           </p>
-          <a
-            href="/"
-            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            ← Back to Library
-          </a>
+          <Link to="/library">
+            <li className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              ← Back to Library
+            </li>
+          </Link>
         </div>
       </div>
     );

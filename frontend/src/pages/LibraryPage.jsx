@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BookCard from "../components/BookCard";
-import { addBook, getBooks, removeBook, updateBookName } from "../utils/db";
+import {
+  addBook,
+  getBook,
+  getBooks,
+  removeBook,
+  updateBookName,
+} from "../utils/db";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { generateThumbnailsForLibrary } from "../utils/generateThumbnail";
+import { generateThumbnailForBook } from "../utils/generateThumbnail";
 import { Plus, Search } from "lucide-react";
+import { fetchMyBooks, normalizeBook, uploadBook } from "../api/books";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+const token = localStorage.getItem("token");
 
 export default function LibraryPage() {
   const navigate = useNavigate();
@@ -19,24 +27,75 @@ export default function LibraryPage() {
   useEffect(() => {
     async function loadBooks() {
       setLoading(true);
-      await generateThumbnailsForLibrary();
-      const updatedBooks = await getBooks();
-      setBooks(updatedBooks);
-      setLoading(false);
+
+      try {
+        const remoteBooks = await fetchMyBooks(token);
+        const normalizedBooks = remoteBooks.map(normalizeBook);
+
+        const booksWithFiles = [];
+
+        for (const book of normalizedBooks) {
+          // Check if book already exists locally
+          const existingBook = await getBook(book.id);
+          if (existingBook?.file) {
+            booksWithFiles.push(existingBook);
+            continue;
+          }
+
+          let fileToSave = book.file;
+
+          // If no file, fetch from URL
+          if (!fileToSave && book.url) {
+            const response = await fetch(book.url);
+            const blob = await response.blob();
+            fileToSave = new File([blob], book.title || "book.pdf", {
+              type: "application/pdf",
+            });
+          }
+
+          const bookWithFile = { ...book, file: fileToSave };
+
+          // Save to IndexedDB for offline
+          await addBook(bookWithFile);
+
+          // Generate thumbnail for this book
+          const bookWithThumbnail = await generateThumbnailForBook(
+            bookWithFile
+          );
+
+          booksWithFiles.push(bookWithThumbnail);
+        }
+
+        setBooks(booksWithFiles);
+      } catch (err) {
+        console.warn("Backend fetch failed, using local IndexedDB:", err);
+        const localBooks = await getBooks();
+        setBooks(localBooks);
+      } finally {
+        setLoading(false);
+      }
     }
+
     loadBooks();
   }, []);
 
   const sortedBooks = [...books].sort((a, b) => {
+    const nameA = a.name || "";
+    const nameB = b.name || "";
+
     switch (sortOption) {
       case "alphabetical":
-        return a.name.localeCompare(b.name);
+        return nameA.localeCompare(nameB);
+
       case "reverse-alphabetical":
-        return b.name.localeCompare(a.name);
+        return nameB.localeCompare(nameA);
+
       case "recently-added":
-        return b.addedAt - a.addedAt;
+        return (b.addedAt || 0) - (a.addedAt || 0);
+
       case "last-opened":
-        return a.lastOpened - a.lastOpened;
+        return (b.lastOpened || 0) - (a.lastOpened || 0);
+
       default:
         return 0;
     }
@@ -48,24 +107,37 @@ export default function LibraryPage() {
 
     setLoading(true);
 
-    const fileUrl = URL.createObjectURL(file);
+    try {
+      // 1️⃣ Upload to backend
+      const result = await uploadBook(file, token);
+      const uploadedBook = result.book;
 
-    const newBook = {
-      id: crypto.randomUUID(),
-      name: file.name,
-      fileUrl,
-      bookmarks: [],
-      file,
-      thumbnail: null,
-    };
+      // 2️⃣ Normalize book for IndexedDB
+      const normalized = normalizeBook({
+        book_id: uploadedBook.book_id,
+        title: uploadedBook.name,
+        url: uploadedBook.url,
+        addedAt: Date.now(),
+        lastOpened: 0,
+        bookmarks: [],
+        thumbnail: null,
+        file,
+      });
 
-    await addBook(newBook);
-    setBooks((prev) => [...prev, newBook]);
+      // 3️⃣ Save to IndexedDB
+      await addBook(normalized);
 
-    const updatedBooks = await generateThumbnailsForLibrary();
-    setBooks(updatedBooks);
+      // 4️⃣ Generate thumbnail for **this single book**
+      const bookWithThumbnail = await generateThumbnailForBook(normalized);
 
-    setLoading(false);
+      // 5️⃣ Add to frontend state
+      setBooks((prev) => [...prev, bookWithThumbnail]);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload book");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRemove = async (id) => {
@@ -91,9 +163,10 @@ export default function LibraryPage() {
     );
   };
 
-  const filteredBooks = sortedBooks.filter((book) =>
-    book.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBooks = sortedBooks.filter((book) => {
+    const name = book.name || book.title || "";
+    return name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
