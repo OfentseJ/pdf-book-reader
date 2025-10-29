@@ -1,11 +1,18 @@
 import { openDB } from "idb";
+import { getUserFromToken } from "./auth";
 
-// Initialize IndexedDB
-const DB_NAME = "libraryDB";
+// Get user-specific database name
+function getDBName() {
+  const user = getUserFromToken();
+  const userId = user?.id || "anonymous";
+  return `libraryDB_${userId}`;
+}
+
 const STORE_NAME = "books";
 
 export async function initDB() {
-  return openDB(DB_NAME, 1, {
+  const dbName = getDBName();
+  return openDB(dbName, 1, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, {
@@ -125,5 +132,21 @@ export async function updateBookLastOpened(id) {
   if (book) {
     book.lastOpened = Date.now();
     await db.put(STORE_NAME, book);
+  }
+}
+
+// Clear all databases for other users (cleanup function)
+export async function clearOtherUserDatabases() {
+  try {
+    const currentDB = getDBName();
+    const databases = await indexedDB.databases();
+
+    for (const db of databases) {
+      if (db.name.startsWith("libraryDB_") && db.name !== currentDB) {
+        await indexedDB.deleteDatabase(db.name);
+      }
+    }
+  } catch (error) {
+    console.warn("Could not clear other user databases:", error);
   }
 }

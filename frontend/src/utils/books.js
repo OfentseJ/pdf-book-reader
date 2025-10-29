@@ -2,6 +2,7 @@ const API_BASE_URL = "http://localhost:8000/api";
 export async function fetchMyBooks(token) {
   const response = await fetch(`${API_BASE_URL}/my-books`, {
     headers: {
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
   });

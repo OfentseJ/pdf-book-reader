@@ -12,10 +12,10 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { generateThumbnailForBook } from "../utils/generateThumbnail";
 import { Plus, Search } from "lucide-react";
-import { fetchMyBooks, normalizeBook, uploadBook } from "../api/books";
+import { fetchMyBooks, normalizeBook, uploadBook } from "../utils/books";
+import LibraryHeader from "../components/LibraryHeader";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-const token = localStorage.getItem("token");
 
 export default function LibraryPage() {
   const navigate = useNavigate();
@@ -23,8 +23,13 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("alphabetical");
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
   useEffect(() => {
+    if (!token) {
+      console.log("⏳ Waiting for token...");
+      return;
+    }
     async function loadBooks() {
       setLoading(true);
 
@@ -89,7 +94,7 @@ export default function LibraryPage() {
     }
 
     loadBooks();
-  }, []);
+  }, [token]);
 
   const sortedBooks = [...books].sort((a, b) => {
     const nameA = a.name || "";
@@ -181,15 +186,7 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            📚 My Library
-          </h1>
-          <p className="text-gray-600">
-            {books.length} {books.length === 1 ? "book" : "books"} in your
-            collection
-          </p>
-        </div>
+        <LibraryHeader />
 
         {/* Controls */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-8">

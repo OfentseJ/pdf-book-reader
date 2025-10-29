@@ -1,8 +1,8 @@
 import express from "express";
 import multer from "multer";
 import fs from "fs/promises";
-import cloudinary from "../cloudinaryConfig.js";
-import db from "../db.js";
+import cloudinary from "../config/cloudinaryConfig.js";
+import db from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
