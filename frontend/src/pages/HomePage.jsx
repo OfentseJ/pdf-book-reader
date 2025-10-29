@@ -9,7 +9,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
   });
@@ -31,6 +31,8 @@ export default function HomePage() {
         ? { email: formData.email, password: formData.password }
         : formData;
 
+      console.log(formData);
+
       const response = await fetch(`http://localhost:8000${endpoint}`, {
         method: "POST",
         headers: {
@@ -40,7 +42,6 @@ export default function HomePage() {
       });
 
       const data = await response.json();
-      console.log("🔐 Auth response data:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Authentication failed");
@@ -155,8 +156,8 @@ export default function HomePage() {
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
-                      name="name"
-                      value={formData.name}
+                      name="username"
+                      value={formData.username}
                       onChange={handleChange}
                       required={!isLogin}
                       placeholder="John Doe"
