@@ -26,11 +26,13 @@ export default function ReaderPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
-          <p className="text-lg text-gray-700 font-medium">Loading book...</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 dark:border-blue-400 mb-4"></div>
+          <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
+            Loading book...
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Preparing your reading experience
           </p>
         </div>
@@ -40,20 +42,20 @@ export default function ReaderPage() {
 
   if (!book) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
         <div className="text-center max-w-md">
-          <div className="inline-block p-6 bg-red-100 rounded-full mb-4">
+          <div className="inline-block p-6 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
             <span className="text-4xl">📕</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Book Not Found
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             We couldn't find the book you're looking for. It may have been
             removed or doesn't exist.
           </p>
           <Link to="/library">
-            <li className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+            <li className="inline-flex items-center px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium">
               ← Back to Library
             </li>
           </Link>

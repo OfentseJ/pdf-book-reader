@@ -33,6 +33,32 @@ export async function uploadBook(file, token) {
   return await response.json();
 }
 
+export async function renameBook(bookId, newName, token) {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}/rename`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ newName }),
+  });
+
+  if (!response.ok) throw new Error("Failed to rename book");
+  return await response.json();
+}
+
+export async function deleteBook(bookId, token) {
+  const response = await fetch(`${API_BASE_URL}/books/${bookId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) throw new Error("Failed to delete book");
+  return await response.json();
+}
+
 export function normalizeBook(rawBook) {
   return {
     // Local unique ID for IndexedDB

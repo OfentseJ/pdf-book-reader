@@ -12,7 +12,13 @@ import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { generateThumbnailForBook } from "../utils/generateThumbnail";
 import { Plus, Search } from "lucide-react";
-import { fetchMyBooks, normalizeBook, uploadBook } from "../utils/books";
+import {
+  deleteBook,
+  fetchMyBooks,
+  normalizeBook,
+  renameBook,
+  uploadBook,
+} from "../utils/books";
 import LibraryHeader from "../components/LibraryHeader";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -34,25 +40,19 @@ export default function LibraryPage() {
       setLoading(true);
 
       try {
-        // 1️⃣ Fetch books from backend
         const remoteBooks = await fetchMyBooks(token);
-
-        // Normalize all remote books
         const normalizedBooks = remoteBooks.map(normalizeBook);
 
         const booksWithFiles = [];
 
         for (const book of normalizedBooks) {
-          // 2️⃣ Check if it exists locally
           const existingBook = await getBook(book.id);
 
           if (existingBook && existingBook.file) {
-            // Already stored with file
             booksWithFiles.push(existingBook);
             continue;
           }
 
-          // 3️⃣ If no file locally, fetch from backend (fileUrl)
           let fileBlob = existingBook?.file || null;
           if (!fileBlob && book.fileUrl) {
             try {
@@ -63,7 +63,6 @@ export default function LibraryPage() {
             }
           }
 
-          // 4️⃣ Build complete book object (for saving)
           const bookToSave = {
             ...book,
             file: fileBlob
@@ -73,16 +72,12 @@ export default function LibraryPage() {
               : null,
           };
 
-          // 5️⃣ Save (or overwrite) in IndexedDB
           await addBook(bookToSave);
-
-          // 6️⃣ Generate thumbnail if needed
           const withThumb = await generateThumbnailForBook(bookToSave);
 
           booksWithFiles.push(withThumb);
         }
 
-        // 7️⃣ Update UI
         setBooks(booksWithFiles);
       } catch (err) {
         console.warn("Backend fetch failed, using local IndexedDB:", err);
@@ -124,27 +119,21 @@ export default function LibraryPage() {
 
     setLoading(true);
     try {
-      // 1️⃣ Upload file to backend
       const result = await uploadBook(file, token);
       const uploadedBook = result.book || result;
 
-      // 2️⃣ Normalize using the CORRECT property names from backend
       const normalized = normalizeBook({
-        id: uploadedBook.id, // ✅ Use 'id' not 'book_id'
-        book_id: uploadedBook.id, // ✅ Set book_id for backend reference
-        name: uploadedBook.name, // ✅ Use 'name' not 'title'
-        fileUrl: uploadedBook.url, // ✅ Use consistent naming
-        file, // keep local file for viewing
+        id: uploadedBook.id,
+        book_id: uploadedBook.id,
+        name: uploadedBook.name,
+        fileUrl: uploadedBook.url,
+        file,
         addedAt: Date.now(),
       });
 
-      // 3️⃣ Save locally
       await addBook(normalized);
-
-      // 4️⃣ Generate thumbnail
       const bookWithThumb = await generateThumbnailForBook(normalized);
 
-      // 5️⃣ Update UI
       setBooks((prev) => [...prev, bookWithThumb]);
     } catch (err) {
       console.error("Upload failed:", err);
@@ -167,11 +156,13 @@ export default function LibraryPage() {
     }
 
     await removeBook(id);
+    await deleteBook(id, token);
     setBooks((prev) => prev.filter((b) => b.id !== id));
   };
 
   const handleRename = async (id, newName) => {
     const updatedBook = await updateBookName(id, newName);
+    await renameBook(id, newName, token);
     setBooks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, name: updatedBook.name } : b))
     );
@@ -183,23 +174,22 @@ export default function LibraryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <LibraryHeader />
 
         {/* Controls */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8 transition-colors">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search your library..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
 
@@ -208,7 +198,7 @@ export default function LibraryPage() {
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white cursor-pointer"
+                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
               >
                 <option value="alphabetical">A–Z</option>
                 <option value="reverse-alphabetical">Z–A</option>
@@ -223,8 +213,10 @@ export default function LibraryPage() {
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-              <p className="text-gray-600">Loading your library...</p>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">
+                Loading your library...
+              </p>
             </div>
           </div>
         ) : (
@@ -232,7 +224,7 @@ export default function LibraryPage() {
             {/* Books Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {/* Upload Card */}
-              <label className="group flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-300 rounded-xl h-64 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-200">
+              <label className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl h-64 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200">
                 <input
                   type="file"
                   accept="application/pdf"
@@ -240,14 +232,16 @@ export default function LibraryPage() {
                   className="hidden"
                 />
                 <div className="flex flex-col items-center space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 group-hover:bg-blue-100 flex items-center justify-center transition-colors">
-                    <Plus className="w-8 h-8 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 flex items-center justify-center transition-colors">
+                    <Plus className="w-8 h-8 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                   </div>
                   <div className="text-center px-4">
-                    <p className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       Add Book
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Upload PDF</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Upload PDF
+                    </p>
                   </div>
                 </div>
               </label>
@@ -268,19 +262,19 @@ export default function LibraryPage() {
             {/* Empty State */}
             {filteredBooks.length === 0 && !loading && (
               <div className="text-center py-16">
-                <div className="inline-block p-6 bg-gray-100 rounded-full mb-4">
-                  <Search className="w-12 h-12 text-gray-400" />
+                <div className="inline-block p-6 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+                  <Search className="w-12 h-12 text-gray-400 dark:text-gray-500" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {searchTerm ? "No books found" : "Your library is empty"}
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
                   {searchTerm
                     ? "Try adjusting your search terms"
                     : "Upload your first PDF to get started"}
                 </p>
                 {!searchTerm && (
-                  <label className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                  <label className="inline-flex items-center px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer transition-colors">
                     <input
                       type="file"
                       accept="application/pdf"
