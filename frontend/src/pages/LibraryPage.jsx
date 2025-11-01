@@ -9,7 +9,6 @@ import {
   updateBookName,
 } from "../utils/db";
 import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { generateThumbnailForBook } from "../utils/generateThumbnail";
 import { Plus, Search } from "lucide-react";
 import {
@@ -21,7 +20,7 @@ import {
 } from "../utils/books";
 import LibraryHeader from "../components/LibraryHeader";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export default function LibraryPage() {
   const navigate = useNavigate();

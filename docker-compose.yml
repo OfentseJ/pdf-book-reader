@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:5000  # Changed from localhost
+
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_NAME=bookreader
+      - JWT_SECRET=421ba6fbe4584e1b33ac9c81bb319852
+      - CLOUDINARY_CLOUD_NAME=dsmp7cyvo
+      - CLOUDINARY_API_KEY=536347136775819
+      - CLOUDINARY_API_SECRET=BbQGuuhqWuvJxbWvmZvOwoXo_BM
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=bookreader
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -42,3 +42,4 @@ function App() {
 }
 
 export default App;
+console.log("Vite env:", import.meta.env);

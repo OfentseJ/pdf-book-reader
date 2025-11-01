@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   getBook,
   updateBookBookmarks,
@@ -9,8 +8,8 @@ import {
   updateBookLastOpened,
   addBook,
 } from "../utils/db";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Edit3,
@@ -27,7 +26,7 @@ import {
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function PdfViewer() {
   const { id } = useParams();

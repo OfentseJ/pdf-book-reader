@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { BookOpen, Lock, Mail, User, Eye, EyeOff } from "lucide-react";
 
 export default function HomePage() {
@@ -7,6 +7,10 @@ export default function HomePage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const API_BASE_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+  console.log("API base URL:", API_BASE_URL);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -26,12 +30,12 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+      const endpoint = isLogin ? "/auth/login" : "/auth/register";
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await fetch(`http://localhost:8000${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
