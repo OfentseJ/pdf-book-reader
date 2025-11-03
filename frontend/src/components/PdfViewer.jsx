@@ -152,11 +152,9 @@ export default function PdfViewer() {
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("keydown", handleMouseMove); // also show nav on key press
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("keydown", handleMouseMove);
       if (hideNavTimeoutRef.current) clearTimeout(hideNavTimeoutRef.current);
     };
   }, []);
@@ -235,7 +233,7 @@ export default function PdfViewer() {
     }
     hideNavTimeoutRef.current = setTimeout(() => {
       setIsNavOpen(false);
-    }, 3000); // hide after 3 seconds of inactivity
+    }, 3000);
   };
 
   if (!book) {
@@ -460,16 +458,6 @@ export default function PdfViewer() {
             </div>
           ) : null}
         </div>
-
-        {!isNavOpen && (
-          <button
-            onClick={() => setIsNavOpen(true)}
-            className="fixed bottom-4 right-4 p-3 bg-blue-600 text-white rounded-full shadow-lg z-50"
-            title="Open navigation"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
 
         {/* Fixed Bottom Controls */}
         <div
