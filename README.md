@@ -28,7 +28,7 @@ _Clean, organized view of your PDF collection with search and sorting_
 
 ### PDF Reader
 
-![PDF Reader](./screenshots/reader.png)
+![PDF Reader](./screenshots/pdf-reader.png)
 _Full-featured PDF reader with bookmarks and page navigation_
 
 ## ✨ Features
