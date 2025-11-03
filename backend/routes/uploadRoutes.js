@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import cloudinary from "../config/cloudinaryConfig.js";
 import db from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
@@ -27,16 +28,16 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
     // Clean up local file
     await fs.unlink(filePath);
 
-    // Save in database
-    const [insertResult] = await db.execute(
-      "INSERT INTO books (user_id, title, cloudinary_url) VALUES (?, ?, ?)",
+    // Save in database and return the id
+    const insertResult = await db.query(
+      "INSERT INTO books (user_id, title, cloudinary_url) VALUES ($1, $2, $3) RETURNING id",
       [req.user.id, req.file.originalname, result.secure_url]
     );
 
     res.json({
       success: true,
       book: {
-        id: insertResult.insertId,
+        id: insertResult.rows[0].id,
         name: req.file.originalname,
         url: result.secure_url,
         uploaded_at: new Date(),
@@ -51,12 +52,12 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
 // Get books for the logged-in user (protected)
 router.get("/my-books", verifyToken, async (req, res) => {
   try {
-    const [books] = await db.execute(
-      "SELECT id, title, cloudinary_url, uploaded_at FROM books WHERE user_id = ? ORDER BY uploaded_at DESC",
+    const result = await db.query(
+      "SELECT id, title, cloudinary_url, uploaded_at FROM books WHERE user_id = $1 ORDER BY uploaded_at DESC",
       [req.user.id]
     );
 
-    res.json(books);
+    res.json(result.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch your books" });
@@ -66,13 +67,14 @@ router.get("/my-books", verifyToken, async (req, res) => {
 // Public route: Get all books uploaded by all users
 router.get("/books", async (req, res) => {
   try {
-    const [books] = await db.execute(
+    const result = await db.query(
       `SELECT b.id, b.title, b.cloudinary_url, b.uploaded_at, u.username 
        FROM books b 
        JOIN users u ON b.user_id = u.id 
        ORDER BY b.uploaded_at DESC`
     );
-    res.json(books);
+
+    res.json(result.rows);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch all books" });

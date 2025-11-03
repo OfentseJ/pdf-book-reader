@@ -28,10 +28,10 @@ const testDBConnection = async () => {
   while (!connected) {
     try {
       await pool.query("SELECT 1");
-      console.log("✅ Connected to MySQL successfully");
+      console.log("✅ Connected to PostgreSQL successfully");
       connected = true;
     } catch (err) {
-      console.log("Waiting for MySQL...", err.message);
+      console.log("Waiting for PostgreSQL...", err.message);
       await new Promise((r) => setTimeout(r, 2000));
     }
   }

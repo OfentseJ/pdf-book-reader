@@ -12,7 +12,3 @@ uploads
 .gitignore
 Dockerfile
 docker-compose.yml
-
-# Ignore environment files
-.env
-*.env

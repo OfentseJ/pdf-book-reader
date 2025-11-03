@@ -10,7 +10,7 @@ router.put("/books/:id/rename", verifyToken, async (req, res) => {
   const { newName } = req.body;
 
   try {
-    await db.execute("UPDATE books SET title = ? WHERE id = ?", [
+    await db.query("UPDATE books SET title = $1 WHERE id = $2", [
       newName,
       bookId,
     ]);
@@ -26,7 +26,7 @@ router.delete("/books/:id", verifyToken, async (req, res) => {
   const bookId = req.params.id;
 
   try {
-    await db.execute("DELETE FROM books WHERE id = ?", [bookId]);
+    await db.query("DELETE FROM books WHERE id = $1", [bookId]);
     res.json({ message: "Book deleted successfully" });
   } catch (error) {
     console.error(error);

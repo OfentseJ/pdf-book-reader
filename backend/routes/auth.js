@@ -11,23 +11,24 @@ router.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
 
     // Check if user exists
-    const [existing] = await db.execute("SELECT * FROM users WHERE email = ?", [
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
-    if (existing.length > 0) {
+
+    if (result.rows.length > 0) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new user
-    const [result] = await db.execute(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+    // Insert new user and return the id
+    const insertResult = await db.query(
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id",
       [username, email, hashedPassword]
     );
 
-    const newUserId = result.insertId;
+    const newUserId = insertResult.rows[0].id;
 
     // Generate JWT
     const token = jwt.sign(
@@ -54,14 +55,15 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [
+    const result = await db.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
-    if (users.length === 0) {
+
+    if (result.rows.length === 0) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const user = users[0];
+    const user = result.rows[0];
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);

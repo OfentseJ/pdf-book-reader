@@ -41,6 +41,9 @@ export default function PdfViewer() {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isNavOpen, setIsNavOpen] = useState(true);
+  const navRef = useRef(null);
+  const hideNavTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!id) return;
@@ -143,6 +146,21 @@ export default function PdfViewer() {
     }
   }, [pageNum, book]);
 
+  useEffect(() => {
+    const handleMouseMove = () => {
+      showNavTemporarily();
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("keydown", handleMouseMove); // also show nav on key press
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("keydown", handleMouseMove);
+      if (hideNavTimeoutRef.current) clearTimeout(hideNavTimeoutRef.current);
+    };
+  }, []);
+
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
 
@@ -208,6 +226,16 @@ export default function PdfViewer() {
     );
     await updateBookBookmarks(book.id, updatedBookmarks);
     setBook({ ...book, bookmarks: updatedBookmarks });
+  };
+
+  const showNavTemporarily = () => {
+    setIsNavOpen(true);
+    if (hideNavTimeoutRef.current) {
+      clearTimeout(hideNavTimeoutRef.current);
+    }
+    hideNavTimeoutRef.current = setTimeout(() => {
+      setIsNavOpen(false);
+    }, 3000); // hide after 3 seconds of inactivity
   };
 
   if (!book) {
@@ -433,8 +461,23 @@ export default function PdfViewer() {
           ) : null}
         </div>
 
+        {!isNavOpen && (
+          <button
+            onClick={() => setIsNavOpen(true)}
+            className="fixed bottom-4 right-4 p-3 bg-blue-600 text-white rounded-full shadow-lg z-50"
+            title="Open navigation"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Fixed Bottom Controls */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 transition-colors">
+        <div
+          ref={navRef}
+          className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 transition-all duration-300 ${
+            isNavOpen ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden"
+          }`}
+        >
           <div className="max-w-4xl mx-auto px-6 py-4">
             {/* Navigation Controls */}
             <div className="flex items-center justify-center space-x-4 mb-3">
