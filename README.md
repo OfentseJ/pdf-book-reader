@@ -464,7 +464,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Ofentse J**
 
 - GitHub: [@OfentseJ](https://github.com/OfentseJ)
-- Portfolio: [Vist](https://ofentsej.github.io/react-personal-portfolio/)
+- Portfolio: [ofentsej.github.io](https://ofentsej.github.io/react-personal-portfolio/)
 
 ## 🙏 Acknowledgments
 
