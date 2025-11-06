@@ -258,7 +258,7 @@ export default function PdfViewer() {
         {sidebarOpen && (
           <div className="flex-1 flex flex-col h-full">
             {/* Sidebar Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-100 to-indigo-950 dark:from-gray-800 dark:to-gray-750">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
                   <Bookmark className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
