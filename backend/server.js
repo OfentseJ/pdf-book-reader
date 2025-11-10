@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import books from "./routes/books.js";
+import passwordReset from "./routes/passwordReset.js";
 import dotenv from "dotenv";
 import pool from "./config/db.js";
 
@@ -18,6 +19,7 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api", books);
+app.use("/api/password", passwordReset);
 
 app.get("/", (req, res) => {
   res.send("PDF Reader API is running...");

@@ -26,7 +26,7 @@ export default function ReaderPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 dark:border-blue-400 mb-4"></div>
           <p className="text-lg text-gray-700 dark:text-gray-200 font-medium">
@@ -42,7 +42,7 @@ export default function ReaderPage() {
 
   if (!book) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
         <div className="text-center max-w-md">
           <div className="inline-block p-6 bg-red-100 dark:bg-red-900/30 rounded-full mb-4">
             <span className="text-4xl">📕</span>

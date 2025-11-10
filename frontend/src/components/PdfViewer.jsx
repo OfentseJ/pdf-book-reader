@@ -258,7 +258,7 @@ export default function PdfViewer() {
         {sidebarOpen && (
           <div className="flex-1 flex flex-col h-full">
             {/* Sidebar Header */}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-100 to-indigo-950 dark:from-gray-800 dark:to-gray-750">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-blue-100 to-indigo-950 dark:from-gray-800 dark:to-gray-750">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
                   <Bookmark className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
@@ -402,7 +402,7 @@ export default function PdfViewer() {
           {error ? (
             <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
+                <div className="shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
                   <span className="text-red-600 dark:text-red-400 text-xl">
                     ⚠
                   </span>
@@ -526,7 +526,7 @@ export default function PdfViewer() {
               >
                 <ZoomOut className="w-4 h-4 text-gray-700 dark:text-gray-300" />
               </button>
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-[80px] text-center">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-20 text-center">
                 {(scale * 100).toFixed(0)}% zoom
               </span>
               <button

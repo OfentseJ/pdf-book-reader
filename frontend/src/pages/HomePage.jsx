@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { BookOpen, Lock, Mail, User, Eye, EyeOff } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -65,17 +66,17 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-6xl flex flex-col lg:flex-row items-center gap-12">
         {/* Left Side - Hero Section */}
         <div className="flex-1 text-center lg:text-left">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
             <BookOpen className="w-10 h-10 text-white" />
           </div>
 
           <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
             Your Digital
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            <span className="block text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600">
               Library
             </span>
           </h1>
@@ -221,7 +222,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-600 dark:hover:to-indigo-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -246,6 +247,18 @@ export default function HomePage() {
                 {isLogin ? "Register" : "Login"}
               </button>
             </p>
+          </div>
+          <div className="flex items-center justify-between mb-6">
+            <label className="flex items-center">
+              <input type="checkbox" className="mr-2" />
+              <span className="text-sm text-gray-400">Remember me</span>
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Forgot Password?
+            </Link>
           </div>
 
           {/* Security Badge */}

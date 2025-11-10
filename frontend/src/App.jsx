@@ -8,6 +8,8 @@ import HomePage from "./pages/HomePage";
 import LibraryPage from "./pages/LibraryPage";
 import ReaderPage from "./pages/ReaderPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Protected Routes */}
         <Route
