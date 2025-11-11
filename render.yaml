@@ -1,0 +1,45 @@
+# render.yaml
+services:
+  - type: web
+    name: pdf-reader-backend
+    env: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DB_HOST
+        fromService: pdf-reader-db
+      - key: DB_USER
+        value: bookreader_user
+      - key: DB_PASS
+        value: bookreader_pass
+      - key: DB_NAME
+        value: bookreader
+      - key: PORT
+        value: 5000
+
+  - type: web
+    name: pdf-reader-frontend
+    env: docker
+    plan: free
+    dockerfilePath: ./frontend/Dockerfile
+    envVars:
+      - key: VITE_API_URL
+        value: https://pdf-reader-backend.onrender.com
+
+  - type: pserv
+    name: pdf-reader-db
+    env: docker
+    plan: free
+    dockerCommand: null
+    image: postgres:15-alpine
+    envVars:
+      - key: POSTGRES_USER
+        value: bookreader_user
+      - key: POSTGRES_PASSWORD
+        value: bookreader_pass
+      - key: POSTGRES_DB
+        value: bookreader
+    disk:
+      name: data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
