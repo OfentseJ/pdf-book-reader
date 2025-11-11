@@ -40,7 +40,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: VITE_API_URL
-        value: https://pdf-reader-backend-c1zn.onrender.com
+        value: https://pdf-reader-backend-c1zn.onrender.com/api
 
 # Database (Native PostgreSQL)
 databases:
