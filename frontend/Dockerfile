@@ -12,6 +12,10 @@ RUN npm install dequal@2.0.3 --save-exact
 # Copy all source files
 COPY . .
 
+# Pass the VITE_API_URL build argument from Render
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the app
 RUN npm run build
 
