@@ -2,8 +2,9 @@
 FROM node:20 AS build
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files explicitly (no glob)
+COPY package.json ./
+COPY package-lock.json ./
 
 # Install dependencies
 RUN npm install
