@@ -18,3 +18,8 @@ CREATE TABLE IF NOT EXISTS books (
 -- Index for faster queries
 CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+-- Reset password columns
+ALTER TABLE users
+ADD COLUMN reset_token VARCHAR(255),
+    ADD COLUMN reset_token_expires TIMESTAMP;
+CREATE INDEX idx_users_reset_token ON users(reset_token);

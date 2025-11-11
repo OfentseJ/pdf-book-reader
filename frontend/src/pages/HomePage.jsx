@@ -247,18 +247,20 @@ export default function HomePage() {
                 {isLogin ? "Register" : "Login"}
               </button>
             </p>
-          </div>
-          <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center">
-              <input type="checkbox" className="mr-2" />
-              <span className="text-sm text-gray-400">Remember me</span>
-            </label>
-            <Link
-              to="/forgot-password"
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Forgot Password?
-            </Link>
+            {isLogin && (
+              <div className="flex items-center justify-between mt-3">
+                <label className="flex items-center">
+                  <input type="checkbox" className="mr-2" />
+                  <span className="text-sm text-gray-400">Remember me</span>
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Security Badge */}

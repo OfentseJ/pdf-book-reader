@@ -18,17 +18,17 @@
 
 ### Login & Authentication
 
-![Login Page](./screenshots/login.png)
+![Login Page](https://via.placeholder.com/800x400/1e293b/60a5fa?text=Login+Page)
 _Secure authentication with JWT tokens_
 
 ### Library Dashboard
 
-![Library View](./screenshots/library.png)
+![Library View](https://via.placeholder.com/800x400/1e293b/60a5fa?text=Library+Dashboard)
 _Clean, organized view of your PDF collection with search and sorting_
 
 ### PDF Reader
 
-![PDF Reader](./screenshots/pdf-reader.png)
+![PDF Reader](https://via.placeholder.com/800x400/1e293b/60a5fa?text=PDF+Reader+View)
 _Full-featured PDF reader with bookmarks and page navigation_
 
 ## ✨ Features
@@ -41,6 +41,7 @@ _Full-featured PDF reader with bookmarks and page navigation_
 - 🔖 **Bookmarks** - Save and manage bookmarks for quick access
 - ✏️ **Organize** - Rename and delete books from your library
 - 🔍 **Search & Sort** - Real-time search with multiple sorting options
+- 🔑 **Password Reset** - Secure email-based password recovery
 
 ### Technical Features
 
@@ -69,6 +70,7 @@ _Full-featured PDF reader with bookmarks and page navigation_
 - ☁️ **Cloudinary** - Cloud storage for PDFs
 - 🔐 **JWT & bcrypt** - Secure authentication
 - 📁 **Multer** - File upload handling
+- 📧 **Nodemailer/SendGrid** - Email service for password resets
 
 ### DevOps
 
@@ -110,6 +112,15 @@ DATABASE_URL=postgresql://bookreader_user:bookreader_pass@db:5432/bookreader
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+# Email Service (Choose one)
+# Option A: Gmail (recommended for testing)
+EMAIL_USER=your-email@gmail.com
+EMAIL_APP_PASSWORD=your-gmail-app-password
+
+# Option B: SendGrid (for production)
+# SENDGRID_API_KEY=your-sendgrid-api-key
+# EMAIL_FROM=verified@yourdomain.com
 
 # Ports
 FRONTEND_PORT=3000
@@ -201,16 +212,18 @@ pdf-book-reader/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── BookCard.jsx           # Book display card
-│   │   │   └── LibraryHeader.jsx      # Library header
+│   │   │   ├── BookCard.jsx              # Book display card
+│   │   │   └── LibraryHeader.jsx         # Library header
 │   │   ├── pages/
-│   │   │   ├── HomePage.jsx           # Landing/Auth page
-│   │   │   ├── LibraryPage.jsx        # Main library view
-│   │   │   └── PdfViewer.jsx          # PDF reader
+│   │   │   ├── ForgotPasswordPage.jsx    # Forgot Password Page
+│   │   │   ├── HomePage.jsx              # Landing/Auth page
+│   │   │   ├── LibraryPage.jsx           # Main library view
+│   │   │   ├── PdfViewer.jsx             # PDF reader
+│   │   │   └── ResetPasswordPage.jsx     # Reset Password Page
 │   │   ├── utils/
-│   │   │   ├── db.js                  # IndexedDB operations
-│   │   │   ├── books.js               # API functions
-│   │   │   └── generateThumbnail.js   # Thumbnail generation
+│   │   │   ├── db.js                     # IndexedDB operations
+│   │   │   ├── books.js                  # API functions
+│   │   │   └── generateThumbnail.js      # Thumbnail generation
 │   │   ├── App.jsx
 │   │   └── main.jsx
 │   ├── Dockerfile
@@ -220,13 +233,15 @@ pdf-book-reader/
 ├── backend/
 │   ├── config/
 │   │   ├── db.js                      # PostgreSQL connection
-│   │   └── cloudinaryConfig.js        # Cloudinary setup
+│   │   ├── cloudinaryConfig.js        # Cloudinary setup
+│   │   └── emailService.js            # email services to reset password
 │   ├── middleware/
 │   │   └── authMiddleware.js          # JWT verification
 │   ├── routes/
 │   │   ├── auth.js                    # Auth endpoints
 │   │   ├── books.js                   # Book CRUD
-│   │   └── bookActions.js             # Rename/Delete
+│   │   ├── passwordReset.js           # Password Reset endpoints
+│   │   └── uploadRoutes.js            # Upload Books
 │   ├── server.js                      # Express app
 │   ├── Dockerfile
 │   └── package.json
@@ -434,6 +449,7 @@ If you see "Failed to load module script" errors:
 - [ ] 📱 Progressive Web App (PWA) support
 - [ ] 🎯 Page slider for quick navigation
 - [ ] 📝 Highlight and annotation features
+- [ ] 🔍 Full-text search within PDFs
 - [ ] 👥 Shared libraries and collaboration
 
 ## 🤝 Contributing
