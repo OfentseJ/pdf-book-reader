@@ -38,6 +38,7 @@ services:
     plan: free
     rootDir: frontend
     dockerfilePath: ./Dockerfile
+    buildCommand: docker build --build-arg VITE_API_URL=https://pdf-reader-backend-c1zn.onrender.com/api -t frontend .
     envVars:
       - key: VITE_API_URL
         value: https://pdf-reader-backend-c1zn.onrender.com/api
