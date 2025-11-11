@@ -5,7 +5,8 @@ services:
     name: pdf-reader-backend
     env: docker
     plan: free
-    dockerfilePath: ./backend/Dockerfile
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_HOST
         fromDatabase:
@@ -35,7 +36,8 @@ services:
     name: pdf-reader-frontend
     env: docker
     plan: free
-    dockerfilePath: ./frontend/Dockerfile
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: VITE_API_URL
         value: https://pdf-reader-backend.onrender.com
