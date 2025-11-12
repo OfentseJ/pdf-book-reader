@@ -71,7 +71,10 @@ export default function PdfViewer() {
           setBook(bookWithFile);
         }
 
-        if (fileToOpen) setPdfUrl(URL.createObjectURL(fileToOpen));
+        if (fileToOpen) {
+          const arrayBuffer = await fileToOpen.arrayBuffer();
+          setPdfUrl({ data: arrayBuffer });
+        }
         if (b.lastPage) setPageNum(b.lastPage);
       } catch (err) {
         console.error(err);
