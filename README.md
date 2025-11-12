@@ -18,17 +18,17 @@
 
 ### Login & Authentication
 
-![Login Page](https://via.placeholder.com/800x400/1e293b/60a5fa?text=Login+Page)
+![Login Page](./screenshots/login.png)
 _Secure authentication with JWT tokens_
 
 ### Library Dashboard
 
-![Library View](https://via.placeholder.com/800x400/1e293b/60a5fa?text=Library+Dashboard)
+![Library View](./screenshots/library.png)
 _Clean, organized view of your PDF collection with search and sorting_
 
 ### PDF Reader
 
-![PDF Reader](https://via.placeholder.com/800x400/1e293b/60a5fa?text=PDF+Reader+View)
+![PDF Reader](./screenshots/pdf-reader.png)
 _Full-featured PDF reader with bookmarks and page navigation_
 
 ## ✨ Features
