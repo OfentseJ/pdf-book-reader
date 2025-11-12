@@ -10,7 +10,7 @@
 
 ## 🎯 Live Demo
 
-**🚀 Coming Soon** - Deployment in progress
+**🚀[Click here](https://pdf-reader-frontend.onrender.com/)
 
 **Note:** This app uses free-tier hosting. The first load may take 30-60 seconds as the server wakes up from sleep mode.
 
