@@ -15,7 +15,7 @@
     "cors": "^2.8.5"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "description": "> A full-stack web application for managing and reading PDF books with cloud sync, offline support, and an intuitive reading experience.",
   "main": "index.js",
