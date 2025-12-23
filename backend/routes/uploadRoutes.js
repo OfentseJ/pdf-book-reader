@@ -1,12 +1,37 @@
 import express from "express";
 import multer from "multer";
-import fs from "fs/promises";
+import { Readable } from "stream"; // NEW: Required for stream upload
 import cloudinary from "../config/cloudinaryConfig.js";
 import db from "../config/db.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-const upload = multer({ dest: "uploads/" });
+
+// 1. CHANGE: Use memoryStorage instead of disk dest
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Helper function to upload buffer to Cloudinary via stream
+const streamUpload = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw", // Keeps original file format (PDF)
+        folder: "pdf-reader",
+        use_filename: true,
+        unique_filename: false,
+      },
+      (error, result) => {
+        if (result) {
+          resolve(result);
+        } else {
+          reject(error);
+        }
+      }
+    );
+    // Convert buffer to stream and pipe to Cloudinary
+    Readable.from(buffer).pipe(stream);
+  });
+};
 
 // Upload file (protected)
 router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
@@ -15,20 +40,12 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const filePath = req.file.path;
+    // 2. CHANGE: Upload from memory buffer using helper
+    const result = await streamUpload(req.file.buffer);
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(filePath, {
-      resource_type: "raw",
-      folder: "pdf-reader",
-      use_filename: true,
-      unique_filename: false,
-    });
+    // 3. REMOVED: fs.unlink is no longer needed (no file on disk)
 
-    // Clean up local file
-    await fs.unlink(filePath);
-
-    // Save in database and return the id
+    // Save in database
     const insertResult = await db.query(
       "INSERT INTO books (user_id, title, cloudinary_url) VALUES ($1, $2, $3) RETURNING id",
       [req.user.id, req.file.originalname, result.secure_url]
@@ -44,7 +61,7 @@ router.post("/upload", verifyToken, upload.single("file"), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Upload error:", error);
     res.status(500).json({ message: "File upload failed" });
   }
 });
