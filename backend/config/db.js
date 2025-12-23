@@ -4,11 +4,21 @@ import dotenv from "dotenv";
 dotenv.config();
 const { Pool } = pkg;
 
+/* CHECK: Vercel Postgres usually provides one long string called 
+   POSTGRES_URL or DATABASE_URL. It's safer to use that than individual parts.
+*/
+const isProduction = process.env.NODE_ENV === "production";
+
+const connectionString =
+  process.env.POSTGRES_URL ||
+  `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
+  connectionString: connectionString,
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 export default pool;

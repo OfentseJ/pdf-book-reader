@@ -9,14 +9,18 @@ import pool from "./config/db.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
-
 const app = express();
+
+// allow Vercel to trust the proxy (required for secure cookies in serverless)
+app.set("trust proxy", 1);
+
 app.use(express.json());
 
 const allowedOrigins = [
   "https://pdf-reader-frontend.onrender.com",
   "http://localhost:3000",
+  // Add your new Vercel frontend URL here once you have it
+  // e.g., "https://your-project-name.vercel.app"
 ];
 
 app.use(
@@ -40,23 +44,10 @@ app.use("/api", books);
 app.use("/api/password", passwordReset);
 
 app.get("/", (req, res) => {
-  res.send("PDF Reader API is running...");
+  res.send("PDF Reader API is running on Vercel...");
 });
 
-const testDBConnection = async () => {
-  let connected = false;
-  while (!connected) {
-    try {
-      await pool.query("SELECT 1");
-      console.log("✅ Connected to PostgreSQL successfully");
-      connected = true;
-    } catch (err) {
-      console.log("Waiting for PostgreSQL...", err.message);
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
-};
-
+// Simple non-blocking health check
 app.get("/api/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
@@ -68,7 +59,4 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  await testDBConnection();
-});
+export default app;
