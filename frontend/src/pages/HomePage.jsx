@@ -36,7 +36,10 @@ export default function HomePage() {
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
+      const fullUrl = `${cleanBaseUrl}${endpoint}`;
+
+      const response = await fetch(fullUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,7 +47,18 @@ export default function HomePage() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      let data;
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const textError = await response.text();
+        console.error("Non-JSON Response from Server:", textError);
+        throw new Error(
+          "Server configuration error. Please check console logs."
+        );
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Authentication failed");
