@@ -192,7 +192,7 @@ export default function PdfViewer() {
   useEffect(() => {
     const handleMouseMove = () => showNavTemporarily();
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchstart", handleMouseMove); // Show on touch too
+    window.addEventListener("touchstart", handleMouseMove);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("touchstart", handleMouseMove);
