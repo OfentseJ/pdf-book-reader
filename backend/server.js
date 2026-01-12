@@ -11,20 +11,18 @@ dotenv.config();
 
 const app = express();
 
-// allow Vercel to trust the proxy (required for secure cookies in serverless)
 app.set("trust proxy", 1);
 
 app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://pdf-book-reader-rho.vercel.app/",
+  "https://pdf-book-reader-rho.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
