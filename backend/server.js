@@ -19,7 +19,8 @@ app.use(express.json());
 const allowedOrigins = [
   "https://pdf-reader-frontend.onrender.com",
   "http://localhost:3000",
-  "https://pdf-book-reader-rho.vercel.app",
+  // Add your new Vercel frontend URL here once you have it
+  // e.g., "https://your-project-name.vercel.app"
 ];
 
 app.use(
