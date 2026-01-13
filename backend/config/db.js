@@ -3,10 +3,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 const { Pool } = pkg;
-
-/* CHECK: Vercel Postgres usually provides one long string called 
-   POSTGRES_URL or DATABASE_URL. It's safer to use that than individual parts.
-*/
+console.log("-----------------------------------------");
+console.log("🛠️  Database Config Check:");
+console.log(`   User: ${process.env.DB_USER}`);
+console.log(`   Host: ${process.env.DB_HOST}`);
+console.log(`   Port: ${process.env.DB_PORT}`);
+console.log(`   DB Name: ${process.env.DB_NAME}`);
+console.log("-----------------------------------------");
 const isProduction = process.env.NODE_ENV === "production";
 
 const connectionString =

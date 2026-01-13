@@ -43,7 +43,7 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
       {/* Thumbnail Section */}
       <div
         onClick={onOpen}
-        className="relative cursor-pointer overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800"
+        className="relative cursor-pointer overflow-hidden bg-lineaer-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800"
       >
         {book.thumbnail ? (
           <img
@@ -186,7 +186,7 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
             </div>
             <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full transition-all duration-500 ease-out"
+                className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>

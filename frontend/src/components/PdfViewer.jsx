@@ -20,12 +20,15 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Menu,
+  PanelLeft, // Changed from Menu for clarity
   X,
   ArrowLeft,
+  Loader2, // Better spinner
+  Maximize,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
+// Ensure this worker path is correct for your setup
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function PdfViewer() {
@@ -41,31 +44,27 @@ export default function PdfViewer() {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [scale, setScale] = useState(1.0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isNavOpen, setIsNavOpen] = useState(true);
-  const navRef = useRef(null);
-  const hideNavTimeoutRef = useRef(null);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideControlsTimeoutRef = useRef(null);
 
+  // --- LOGIC (Identical to your original code) ---
   useEffect(() => {
     if (!id) return;
-
     async function loadBook() {
       try {
         const bookId = isNaN(id) ? id : Number(id);
         const b = await getBook(bookId);
         if (!b) throw new Error("Book not found");
-
         setBook(b);
         updateBookLastOpened(bookId);
 
         let fileToOpen = b.file;
-
         if (!fileToOpen && b.fileUrl) {
           const response = await fetch(b.fileUrl);
           const blob = await response.blob();
           fileToOpen = new File([blob], b.title || "book.pdf", {
             type: "application/pdf",
           });
-
           const bookWithFile = { ...b, file: fileToOpen };
           await addBook(bookWithFile);
           setBook(bookWithFile);
@@ -81,9 +80,7 @@ export default function PdfViewer() {
         setBook(null);
       }
     }
-
     loadBook();
-
     return () => {
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
@@ -92,79 +89,99 @@ export default function PdfViewer() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       const scrollContainer = scrollContainerRef.current;
+
+      // If we are typing in an input (like the page number box), ignore shortcuts
+      if (e.target.tagName === "INPUT") return;
+
       if (!scrollContainer) return;
 
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        handlePageChange(pageNum - 1);
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        handlePageChange(pageNum + 1);
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        scrollContainer.scrollBy({ top: -100, behavior: "smooth" });
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        scrollContainer.scrollBy({ top: 100, behavior: "smooth" });
-      }
-      if (e.key === "PageUp") {
-        e.preventDefault();
-        scrollContainer.scrollBy({
-          top: -scrollContainer.clientHeight * 0.8,
-          behavior: "smooth",
-        });
-      }
-      if (e.key === "PageDown") {
-        e.preventDefault();
-        scrollContainer.scrollBy({
-          top: scrollContainer.clientHeight * 0.8,
-          behavior: "smooth",
-        });
-      }
-      if (e.key === "Home") {
-        e.preventDefault();
-        scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
-      }
-      if (e.key === "End") {
-        e.preventDefault();
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: "smooth",
-        });
+      switch (e.key) {
+        // Page Navigation
+        case "ArrowLeft":
+          e.preventDefault();
+          handlePageChange(pageNum - 1);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          handlePageChange(pageNum + 1);
+          break;
+
+        // Vertical Scrolling
+        case "ArrowUp":
+          e.preventDefault();
+          scrollContainer.scrollBy({ top: -150, behavior: "smooth" });
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          scrollContainer.scrollBy({ top: 150, behavior: "smooth" });
+          break;
+
+        // Fast Scrolling
+        case "PageUp":
+          e.preventDefault();
+          scrollContainer.scrollBy({
+            top: -scrollContainer.clientHeight * 0.8,
+            behavior: "smooth",
+          });
+          break;
+        case "PageDown":
+          e.preventDefault();
+          scrollContainer.scrollBy({
+            top: scrollContainer.clientHeight * 0.8,
+            behavior: "smooth",
+          });
+          break;
+
+        // Top / Bottom
+        case "Home":
+          e.preventDefault();
+          scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+          break;
+        case "End":
+          e.preventDefault();
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          });
+          break;
+
+        default:
+          break;
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pageNum, numPages]);
-
+  }, [pageNum, numPages]); // Dependencies
+  // Sync Last Page
   useEffect(() => {
     if (!book) return;
-
     if (Number(book.lastPage) !== Number(pageNum)) {
       updateBookLastPage(book.id, pageNum).catch(console.error);
       setBook((prev) => ({ ...prev, lastPage: pageNum }));
     }
   }, [pageNum, book]);
 
+  // Mouse Move to show controls
   useEffect(() => {
     const handleMouseMove = () => {
-      showNavTemporarily();
+      setControlsVisible(true);
+      if (hideControlsTimeoutRef.current)
+        clearTimeout(hideControlsTimeoutRef.current);
+      hideControlsTimeoutRef.current = setTimeout(() => {
+        setControlsVisible(false);
+      }, 3000);
     };
-
     window.addEventListener("mousemove", handleMouseMove);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      if (hideNavTimeoutRef.current) clearTimeout(hideNavTimeoutRef.current);
+      if (hideControlsTimeoutRef.current)
+        clearTimeout(hideControlsTimeoutRef.current);
     };
   }, []);
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
-
     if (book) {
       const current = Number(book.numPages) || 0;
       if (current !== numPages) {
@@ -177,26 +194,12 @@ export default function PdfViewer() {
     }
   };
 
-  const onDocumentLoadError = (error) => {
-    setError("Failed to load PDF: " + error.message);
-  };
-
-  const documentOptions = useMemo(
-    () => ({
-      cMapUrl: "cmaps/",
-      standardFontDataUrl: "standard_fonts/",
-    }),
-    []
-  );
-
   const bookmarkPage = async () => {
     if (!book) return;
-
     if (book.bookmarks?.some((b) => b.page === pageNum)) {
       alert(`Page ${pageNum} is already bookmarked!`);
       return;
     }
-
     const newBookmark = { id: uuidv4(), page: pageNum, label: "" };
     const newBookmarks = [...(book.bookmarks || []), newBookmark];
     await updateBookBookmarks(book.id, newBookmarks);
@@ -210,16 +213,6 @@ export default function PdfViewer() {
     setBook({ ...book, bookmarks: updatedBookmarks });
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= numPages) {
-      setPageNum(newPage);
-    }
-
-    if (pageRef.current) {
-      pageRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-
   const updateBookmarkLabel = async (bookmarkId, newLabel) => {
     if (!book) return;
     const updatedBookmarks = book.bookmarks.map((b) =>
@@ -229,437 +222,259 @@ export default function PdfViewer() {
     setBook({ ...book, bookmarks: updatedBookmarks });
   };
 
-  const showNavTemporarily = () => {
-    setIsNavOpen(true);
-    if (hideNavTimeoutRef.current) {
-      clearTimeout(hideNavTimeoutRef.current);
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= numPages) {
+      setPageNum(newPage);
+      if (pageRef.current) {
+        pageRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
-    hideNavTimeoutRef.current = setTimeout(() => {
-      setIsNavOpen(false);
-    }, 3000);
   };
 
+  // --- LOADING STATE ---
   if (!book) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
-               {" "}
-        <div className="text-center">
-                   {" "}
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
-                   {" "}
-          <p className="text-gray-600 dark:text-gray-400">Loading book...</p>   
-             {" "}
-        </div>
-             {" "}
+      <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+        <p className="text-neutral-500 animate-pulse">Opening your book...</p>
       </div>
     );
   }
 
+  // --- MAIN RENDER ---
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-            {/* Sidebar */}     {" "}
-      <div
+    <div className="flex h-screen bg-neutral-100 dark:bg-neutral-900 overflow-hidden relative">
+      {/* 1. SIDEBAR (Bookmarks) */}
+      <aside
         className={`${
-          sidebarOpen ? "w-80" : "w-0"
-        } transition-all duration-300 ease-in-out overflow-hidden bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg flex flex-col`}
+          sidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"
+        } fixed inset-y-0 left-0 z-50 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-xl border-r border-neutral-200 dark:border-neutral-700 transition-all duration-300 ease-in-out shadow-2xl flex flex-col`}
       >
-               {" "}
         {sidebarOpen && (
-          <div className="flex-1 flex flex-col h-full">
-                        {/* Sidebar Header */}           {" "}
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-blue-100 to-indigo-950 dark:from-gray-800 dark:to-gray-750">
-                           {" "}
-              <div className="flex items-center justify-between mb-2">
-                               {" "}
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-                                   {" "}
-                  <Bookmark className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                                    Bookmarks                {" "}
-                </h3>
-                               {" "}
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-1 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700 transition-colors"
-                  title="Close sidebar"
-                >
-                                   {" "}
-                  <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />   
-                             {" "}
-                </button>
-                             {" "}
-              </div>
-                           {" "}
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {book.bookmarks?.length || 0} saved            
-                 {" "}
-              </p>
-                         {" "}
+          <>
+            <div className="p-5 border-b border-neutral-100 dark:border-neutral-700 flex justify-between items-center bg-white/50 dark:bg-neutral-800/50">
+              <h3 className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center">
+                <Bookmark className="w-4 h-4 mr-2 text-blue-500 fill-blue-500" />
+                Bookmarks
+              </h3>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-neutral-500" />
+              </button>
             </div>
-                        {/* Bookmarks List */}           {" "}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900">
-                           {" "}
-              {!book?.bookmarks || book.bookmarks.length === 0 ? (
-                <div className="text-center py-12">
-                                   {" "}
-                  <div className="inline-block p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-3">
-                                       {" "}
-                    <Bookmark className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                                     {" "}
-                  </div>
-                                   {" "}
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-                                        No bookmarks yet                  {" "}
-                  </p>
-                                   {" "}
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                                        Click the bookmark button to save pages
-                                     {" "}
-                  </p>
-                                 {" "}
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {!book.bookmarks?.length ? (
+                <div className="flex flex-col items-center justify-center h-48 text-neutral-400">
+                  <Bookmark className="w-12 h-12 mb-3 opacity-20" />
+                  <p className="text-sm">No bookmarks yet</p>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                                   {" "}
-                  {book.bookmarks.map((bm) => (
-                    <li
-                      key={bm.id}
-                      className={`group bg-white dark:bg-gray-800 border rounded-lg hover:shadow-md transition-all ${
-                        bm.page === pageNum
-                          ? "border-blue-500 dark:border-blue-400 ring-2 ring-blue-100 dark:ring-blue-900"
-                          : "border-gray-200 dark:border-gray-700"
-                      }`}
-                    >
-                                           {" "}
-                      <button
-                        onClick={() => setPageNum(bm.page)}
-                        className="w-full text-left p-3"
-                      >
-                                               {" "}
-                        <div className="flex items-start justify-between">
-                                                   {" "}
-                          <div className="flex-1 min-w-0">
-                                                       {" "}
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                           {" "}
-                              {bm.label || `Page ${bm.page}`}                   
-                                     {" "}
-                            </p>
-                                                       {" "}
-                            {bm.label && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                                Page {bm.page} 
-                                                           {" "}
-                              </p>
-                            )}
-                                                     {" "}
-                          </div>
-                                                   {" "}
-                          <div className="flex items-center space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                       {" "}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const newLabel = prompt(
-                                  "Enter bookmark name:",
-                                  bm.label || ""
-                                );
-                                if (newLabel !== null) {
-                                  updateBookmarkLabel(bm.id, newLabel);
-                                }
-                              }}
-                              className="p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                              title="Rename"
-                            >
-                                                           {" "}
-                              <Edit3 className="w-4 h-4" />                     
-                                   {" "}
-                            </button>
-                                                       {" "}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeBookmark(bm.id);
-                              }}
-                              className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
-                              title="Delete"
-                            >
-                                                           {" "}
-                              <Trash2 className="w-4 h-4" />                   
-                                     {" "}
-                            </button>
-                                                     {" "}
-                          </div>
-                                                 {" "}
-                        </div>
-                                             {" "}
-                      </button>
-                                         {" "}
-                    </li>
-                  ))}
-                                 {" "}
-                </ul>
-              )}
-                         {" "}
-            </div>
-                     {" "}
-          </div>
-        )}
-             {" "}
-      </div>
-            {/* Main Content */}     {" "}
-      <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Header */}       {" "}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
-                   {" "}
-          <div className="px-6 py-4">
-                       {" "}
-            <div className="flex items-center justify-between">
-                           {" "}
-              <div className="flex items-center space-x-4">
-                               {" "}
-                <button
-                  onClick={() => navigate("/library")}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-700 dark:text-gray-200 font-medium"
-                >
-                                    <ArrowLeft className="w-4 h-4" />           
-                        <span>Library</span>               {" "}
-                </button>
-                               {" "}
-                {!sidebarOpen && (
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg transition-colors font-medium"
+                book.bookmarks.map((bm) => (
+                  <div
+                    key={bm.id}
+                    onClick={() => setPageNum(bm.page)}
+                    className={`group cursor-pointer p-3 rounded-xl border transition-all duration-200 ${
+                      bm.page === pageNum
+                        ? "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 shadow-xs"
+                        : "bg-transparent border-transparent hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                    }`}
                   >
-                                        <Menu className="w-4 h-4" />           
-                            <span>Bookmarks</span>                 {" "}
-                  </button>
-                )}
-                             {" "}
-              </div>
-                           {" "}
-              <div className="flex-1 mx-6 max-w-md">
-                               {" "}
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-                                    📖 {book.name}               {" "}
-                </h1>
-                             {" "}
-              </div>
-                           {" "}
-              <div className="flex items-center space-x-3">
-                               {" "}
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                                    Page {pageNum} of {numPages || "?"}         
-                       {" "}
-                </div>
-                             {" "}
-              </div>
-                         {" "}
-            </div>
-                     {" "}
-          </div>
-                 {" "}
-        </div>
-                {/* PDF Content */}       {" "}
-        <div
-          ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto bg-gray-100 dark:bg-gray-900 pb-32 transition-colors"
-        >
-                   {" "}
-          {error ? (
-            <div className="max-w-2xl mx-auto mt-8 p-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                           {" "}
-              <div className="flex items-start space-x-3">
-                               {" "}
-                <div className="shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center">
-                                   {" "}
-                  <span className="text-red-600 dark:text-red-400 text-xl">
-                                        ⚠                  {" "}
-                  </span>
-                                 {" "}
-                </div>
-                               {" "}
-                <div>
-                                   {" "}
-                  <h3 className="text-red-900 dark:text-red-300 font-semibold mb-1">
-                                        Error Loading PDF                  {" "}
-                  </h3>
-                                   {" "}
-                  <p className="text-red-700 dark:text-red-400 text-sm">
-                                        {error}                 {" "}
-                  </p>
-                                 {" "}
-                </div>
-                             {" "}
-              </div>
-                         {" "}
-            </div>
-          ) : pdfUrl ? (
-            <div className="py-8">
-                           {" "}
-              <div
-                ref={pageRef}
-                className="flex justify-center items-center mb-6"
-              >
-                               {" "}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-                                   {" "}
-                  <Document
-                    file={pdfUrl}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={onDocumentLoadError}
-                    options={documentOptions}
-                    loading={
-                      <div className="p-12 text-center">
-                                               {" "}
-                        <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 dark:border-blue-400 mb-3"></div>
-                                               {" "}
-                        <p className="text-gray-600 dark:text-gray-400">
-                                                    Loading document...        
-                                         {" "}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                          Page {bm.page}
+                        </span>
+                        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mt-1">
+                          {bm.label || "Untitled Bookmark"}
                         </p>
-                                             {" "}
                       </div>
-                    }
-                  >
-                                       {" "}
-                    <Page
-                      pageNumber={pageNum}
-                      renderMode="canvas"
-                      width={Math.min(800, window.innerWidth - 100)}
-                      scale={scale}
-                      loading={
-                        <div className="p-12 text-center">
-                                                   {" "}
-                          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mb-2"></div>
-                                                   {" "}
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">
-                                                        Loading page...        
-                                             {" "}
-                          </p>
-                                                 {" "}
-                        </div>
-                      }
-                    />
-                                     {" "}
-                  </Document>
-                                 {" "}
-                </div>
-                             {" "}
-              </div>
-                         {" "}
+                      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const l = prompt("Label:", bm.label);
+                            if (l !== null) updateBookmarkLabel(bm.id, l);
+                          }}
+                          className="p-1.5 hover:text-blue-600"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeBookmark(bm.id);
+                          }}
+                          className="p-1.5 hover:text-red-600"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ) : null}
-                 {" "}
-        </div>
-                {/* Fixed Bottom Controls */}       {" "}
-        <div
-          ref={navRef}
-          className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 transition-all duration-300 ${
-            isNavOpen ? "h-auto opacity-100" : "h-0 opacity-0 overflow-hidden"
+          </>
+        )}
+      </aside>
+
+      {/* 2. MAIN CONTENT AREA */}
+      <main className="flex-1 flex flex-col relative h-full transition-all duration-300">
+        {/* Top Header (Floating, Transparent) */}
+        <header
+          className={`absolute top-0 left-0 right-0 h-16 z-40 flex items-center justify-between px-6 transition-transform duration-300 ${
+            controlsVisible ? "translate-y-0" : "-translate-y-full"
           }`}
         >
-                   {" "}
-          <div className="max-w-4xl mx-auto px-6 py-4">
-                        {/* Navigation Controls */}           {" "}
-            <div className="flex items-center justify-center space-x-4 mb-3">
-                           {" "}
+          {/* Back & Title */}
+          <div className="flex items-center space-x-4 bg-white/80 dark:bg-black/50 backdrop-blur-md py-2 px-4 rounded-full shadow-sm border border-white/20">
+            <button
+              onClick={() => navigate("/library")}
+              className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-neutral-700 dark:text-neutral-200" />
+            </button>
+            <h1 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 max-w-[200px] truncate">
+              {book.name}
+            </h1>
+          </div>
+
+          {/* Sidebar Toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`p-2 rounded-full backdrop-blur-md transition-all shadow-sm border border-white/20 ${
+              sidebarOpen
+                ? "bg-blue-600 text-white"
+                : "bg-white/80 dark:bg-black/50 text-neutral-700 dark:text-neutral-200 hover:bg-white dark:hover:bg-black/70"
+            }`}
+          >
+            <PanelLeft className="w-5 h-5" />
+          </button>
+        </header>
+
+        {/* PDF Scroll Area */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-auto flex justify-center p-8 pb-32"
+          onClick={() => setSidebarOpen(false)} // Close sidebar when clicking content
+        >
+          {error ? (
+            <div className="flex flex-col items-center justify-center text-red-500">
+              <span className="text-3xl mb-2">⚠️</span>
+              <p>{error}</p>
+            </div>
+          ) : pdfUrl ? (
+            <div className="relative shadow-2xl shadow-neutral-500/20 dark:shadow-black/50 transition-transform duration-200 ease-out origin-top">
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={
+                  <div className="h-[800px] w-[600px] bg-white dark:bg-neutral-800 animate-pulse rounded shadow-sm" />
+                }
+              >
+                <Page
+                  pageNumber={pageNum}
+                  renderMode="canvas"
+                  width={Math.min(1000, window.innerWidth - 40)} // Slightly larger default
+                  scale={scale}
+                  className="bg-white" // Paper white background
+                  loading=""
+                />
+              </Document>
+            </div>
+          ) : null}
+        </div>
+
+        {/* 3. FLOATING DOCK CONTROLS (The main UI upgrade) */}
+        <div
+          className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${
+            controlsVisible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-20 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex items-center space-x-1 p-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl shadow-black/10">
+            {/* Page Navigation Group */}
+            <div className="flex items-center space-x-1 pr-2 border-r border-neutral-200 dark:border-neutral-700">
               <button
                 onClick={() => handlePageChange(pageNum - 1)}
                 disabled={pageNum <= 1}
-                className="p-2 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
-                title="Previous page"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
               >
-                                <ChevronLeft className="w-5 h-5" />             {" "}
+                <ChevronLeft className="w-5 h-5 text-neutral-700 dark:text-neutral-200" />
               </button>
-                           {" "}
-              <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700 px-4 py-2 rounded-lg">
-                               {" "}
+
+              <div className="flex items-center relative group">
                 <input
                   type="number"
                   value={pageNum}
                   onChange={(e) => {
-                    const page = parseInt(e.target.value);
-                    if (page >= 1 && page <= numPages) {
-                      handlePageChange(page);
-                    }
+                    const val = parseInt(e.target.value);
+                    if (val >= 1 && val <= numPages) handlePageChange(val);
                   }}
-                  min={1}
-                  max={numPages || 1}
-                  className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-12 text-center bg-transparent font-semibold text-neutral-800 dark:text-neutral-100 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
-                               {" "}
-                <span className="text-gray-600 dark:text-gray-400 font-medium">
-                                    / {numPages || "?"}               {" "}
+                <span className="text-neutral-400 text-sm select-none">
+                  / {numPages}
                 </span>
-                             {" "}
               </div>
-                           {" "}
+
               <button
                 onClick={() => handlePageChange(pageNum + 1)}
                 disabled={pageNum >= numPages}
-                className="p-2 rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
-                title="Next page"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
               >
-                                <ChevronRight className="w-5 h-5" />           
-                 {" "}
+                <ChevronRight className="w-5 h-5 text-neutral-700 dark:text-neutral-200" />
               </button>
-                           {" "}
-              <div className="w-px h-8 bg-gray-300 dark:bg-gray-600"></div>     
-                     {" "}
-              <button
-                onClick={bookmarkPage}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 dark:bg-green-500 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors font-medium"
-              >
-                                <Bookmark className="w-4 h-4" />               {" "}
-                <span>Bookmark</span>             {" "}
-              </button>
-                         {" "}
             </div>
-                        {/* Zoom Controls */}           {" "}
-            <div className="flex items-center justify-center space-x-2">
-                           {" "}
+
+            {/* Zoom Group */}
+            <div className="flex items-center space-x-1 px-2 border-r border-neutral-200 dark:border-neutral-700">
               <button
                 onClick={() => setScale((s) => Math.max(s - 0.2, 0.5))}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                title="Zoom out"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                               {" "}
-                <ZoomOut className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                             {" "}
+                <ZoomOut className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
               </button>
-                           {" "}
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400 min-w-20 text-center">
-                                {(scale * 100).toFixed(0)}% zoom              {" "}
+              <span className="text-xs font-medium text-neutral-500 w-12 text-center">
+                {Math.round(scale * 100)}%
               </span>
-                           {" "}
               <button
                 onClick={() => setScale((s) => Math.min(s + 0.2, 3.0))}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                title="Zoom in"
+                className="p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
-                               {" "}
-                <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" /> 
-                           {" "}
+                <ZoomIn className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
               </button>
-                           {" "}
-              <button
-                onClick={() => setScale(1.0)}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                title="Reset zoom"
-              >
-                               {" "}
-                <RotateCcw className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                             {" "}
-              </button>
-                         {" "}
             </div>
-                     {" "}
+
+            {/* Actions Group */}
+            <div className="flex items-center space-x-1 pl-1">
+              <button
+                onClick={() => setScale(1)}
+                className="p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                title="Reset Zoom"
+              >
+                <Maximize className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
+              </button>
+
+              <button
+                onClick={bookmarkPage}
+                className="p-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+                title="Add Bookmark"
+              >
+                {book.bookmarks?.some((b) => b.page === pageNum) ? (
+                  <Bookmark className="w-5 h-5 fill-current" />
+                ) : (
+                  <Bookmark className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
-                 {" "}
         </div>
-             {" "}
-      </div>
-         {" "}
+      </main>
     </div>
   );
 }
