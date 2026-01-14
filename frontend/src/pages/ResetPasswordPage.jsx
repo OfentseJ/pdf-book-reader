@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import {
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -79,31 +86,37 @@ export default function ResetPasswordPage() {
     }
   };
 
+  // --- 1. LOADING STATE ---
   if (verifying) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Verifying reset link...</p>
+          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-500 dark:text-neutral-400 font-medium">
+            Verifying security token...
+          </p>
         </div>
       </div>
     );
   }
 
+  // --- 2. INVALID TOKEN STATE ---
   if (!tokenValid) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-gray-800 rounded-xl p-8 text-center">
-          <div className="w-16 h-16 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">⚠️</span>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-neutral-800 rounded-3xl shadow-xl p-8 border border-neutral-100 dark:border-neutral-700 text-center">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Invalid or Expired Link
+          <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+            Link Expired or Invalid
           </h2>
-          <p className="text-gray-400 mb-6">{error}</p>
+          <p className="text-neutral-500 dark:text-neutral-400 mb-8">
+            {error || "This password reset link is invalid or has expired."}
+          </p>
           <Link
             to="/"
-            className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="inline-flex px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold rounded-xl hover:opacity-90 transition-opacity"
           >
             Back to Login
           </Link>
@@ -112,77 +125,95 @@ export default function ResetPasswordPage() {
     );
   }
 
+  // --- 3. SUCCESS STATE ---
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-gray-800 rounded-xl p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Password Reset Successful!
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-neutral-800 rounded-3xl shadow-xl p-8 border border-neutral-100 dark:border-neutral-700 text-center">
+          <div className="w-16 h-16 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
+            Password Reset!
           </h2>
-          <p className="text-gray-400 mb-6">Redirecting to login...</p>
+          <p className="text-neutral-500 dark:text-neutral-400 mb-6">
+            Your password has been successfully updated. Redirecting you to
+            login...
+          </p>
+          <div className="w-full bg-neutral-100 dark:bg-neutral-700 h-1 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 animate-[width_3s_ease-in-out_forwards] w-0"></div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // --- 4. MAIN FORM ---
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4 transition-colors">
       <div className="max-w-md w-full">
-        <div className="bg-gray-800 rounded-xl shadow-2xl p-8">
+        <div className="bg-white dark:bg-neutral-800 rounded-3xl shadow-xl shadow-neutral-200/50 dark:shadow-black/50 p-8 border border-neutral-100 dark:border-neutral-700">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+              <ShieldCheck className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">
               Reset Password
             </h2>
-            <p className="text-gray-400">Enter your new password</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+              Please choose a new, secure password.
+            </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-900/30 border border-red-500 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-gray-300 mb-2">New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider ml-1">
+                New Password
+              </label>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-12 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full pl-10 pr-12 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-neutral-900 dark:text-white placeholder-neutral-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
+                    <EyeOff className="w-4 h-4" />
                   ) : (
-                    <Eye className="w-5 h-5" />
+                    <Eye className="w-4 h-4" />
                   )}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label className="block text-gray-300 mb-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider ml-1">
                 Confirm Password
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 group-focus-within:text-blue-500 transition-colors" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full pl-10 pr-4 py-3 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-neutral-900 dark:text-white placeholder-neutral-400"
                 />
               </div>
             </div>
@@ -190,9 +221,13 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center mt-2"
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Set New Password"
+              )}
             </button>
           </form>
         </div>
