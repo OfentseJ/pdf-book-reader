@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { MoreVertical, BookOpen, Edit3, Trash2, FileText } from "lucide-react";
+import {
+  MoreVertical,
+  BookOpen,
+  Edit3,
+  Trash2,
+  FileText,
+  Clock,
+} from "lucide-react";
 
 export default function BookCard({ book, onOpen, onRemove, onRename }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,49 +43,52 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
 
   return (
     <div
-      className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+      className="group relative flex flex-col bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden hover:shadow-xl hover:shadow-neutral-200/50 dark:hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Thumbnail Section */}
       <div
         onClick={onOpen}
-        className="relative cursor-pointer overflow-hidden bg-lineaer-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800"
+        className="relative aspect-[3/4] cursor-pointer overflow-hidden bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-700"
       >
         {book.thumbnail ? (
           <img
             src={book.thumbnail}
-            alt={`${book.name} thumbnail`}
-            className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105"
+            alt={book.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
           />
         ) : (
-          <div className="w-full h-64 flex flex-col items-center justify-center">
-            <FileText className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-2" />
-            <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-              No Preview
+          <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 bg-neutral-200 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-3">
+              <FileText className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+            </div>
+            <span className="text-xs text-neutral-400 dark:text-neutral-500 font-medium">
+              No Preview Available
             </span>
           </div>
         )}
 
         {/* Hover Overlay */}
         <div
-          className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-[2px] flex items-center justify-center transition-opacity duration-300 ${
             isHovered ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-              Open Book
+          <button className="flex items-center space-x-2 px-5 py-2.5 bg-white dark:bg-neutral-800 rounded-full shadow-lg transform scale-95 group-hover:scale-100 transition-all duration-200">
+            <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-bold text-neutral-900 dark:text-white">
+              Read Now
             </span>
-          </div>
+          </button>
         </div>
 
-        {/* Options Menu Button */}
+        {/* Menu Button - Only visible on hover/active */}
         <div
           ref={menuRef}
-          className={`absolute top-3 right-3 transition-opacity duration-200 ${
-            isHovered || menuOpen ? "opacity-100" : "opacity-0"
+          className={`absolute top-2 right-2 transition-opacity duration-200 z-10 ${
+            isHovered || menuOpen ? "opacity-100" : "opacity-0 md:opacity-0"
           }`}
         >
           <button
@@ -86,133 +96,108 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
               e.stopPropagation();
               setMenuOpen((prev) => !prev);
             }}
-            className="p-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+            className={`p-1.5 rounded-full shadow-sm transition-colors ${
+              menuOpen
+                ? "bg-white text-neutral-900 dark:bg-neutral-700 dark:text-white"
+                : "bg-white/80 dark:bg-black/50 text-neutral-700 dark:text-neutral-200 hover:bg-white dark:hover:bg-neutral-800"
+            }`}
           >
-            <MoreVertical className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <MoreVertical className="w-4 h-4" />
           </button>
 
           {/* Dropdown Menu */}
-          <div
-            className={`absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-20 transform transition-all duration-200 ease-out origin-top-right ${
-              menuOpen
-                ? "opacity-100 scale-100 translate-y-0"
-                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-            }`}
-          >
-            <ul className="py-2">
-              <li>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpen();
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
-                >
-                  <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Open
-                  </span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRename();
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
-                >
-                  <Edit3 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Rename
-                  </span>
-                </button>
-              </li>
-              <li className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      confirm(`Are you sure you want to delete "${book.name}"?`)
-                    ) {
-                      onRemove();
-                    }
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Delete
-                  </span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen();
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Open</span>
+              </button>
 
-        {/* Progress Badge */}
-        {total > 0 && progress > 0 && (
-          <div className="absolute bottom-3 left-3">
-            <div className="px-3 py-1.5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg shadow-lg">
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                {progress}%
-              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRename();
+                }}
+                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700/50"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Rename</span>
+              </button>
+
+              <div className="h-px bg-neutral-100 dark:bg-neutral-700 my-1" />
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`Delete "${book.name}"?`)) onRemove();
+                  setMenuOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Book Info Section */}
-      <div className="p-4">
+      <div className="flex flex-col flex-1 p-4">
         <h3
-          className="text-sm font-semibold text-gray-900 dark:text-white truncate mb-3"
+          className="text-sm font-bold text-neutral-900 dark:text-neutral-100 line-clamp-1 mb-1"
           title={book.name}
         >
           {book.name}
         </h3>
 
+        {/* Date / Metadata */}
+        <div className="flex items-center text-xs text-neutral-400 dark:text-neutral-500 mb-3">
+          <Clock className="w-3 h-3 mr-1" />
+          <span>
+            Added {new Date(book.addedAt || Date.now()).toLocaleDateString()}
+          </span>
+        </div>
+
         {/* Progress Bar */}
-        {total > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-              <span className="font-medium">
-                {last} / {total} pages
-              </span>
-              <span className="text-gray-500 dark:text-gray-500">
-                {progress}%
-              </span>
-            </div>
-            <div className="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              >
-                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+        <div className="mt-auto">
+          {total > 0 ? (
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-end text-xs">
+                <span
+                  className={`font-medium ${
+                    progress === 100
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  {progress === 100 ? "Completed" : `${progress}%`}
+                </span>
+                <span className="text-neutral-400">
+                  {last}/{total}
+                </span>
+              </div>
+
+              <div className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    progress === 100 ? "bg-green-500" : "bg-blue-500"
+                  }`}
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Status Badge */}
-        {total > 0 && (
-          <div className="mt-3 flex items-center">
-            {progress === 0 ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                Not started
-              </span>
-            ) : progress === 100 ? (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                ✓ Completed
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
-                In progress
-              </span>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="text-xs text-neutral-400 italic">Not started</div>
+          )}
+        </div>
       </div>
     </div>
   );
