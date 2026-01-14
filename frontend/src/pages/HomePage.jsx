@@ -90,7 +90,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         {/* Left Side - Hero Section */}
-        <div className="text-center lg:text-left order-2 lg:order-1">
+        <div className="text-center lg:text-left">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-8 shadow-lg shadow-blue-500/30 rotate-3 transform transition-transform hover:rotate-6">
             <BookOpen className="w-8 h-8 text-white" />
           </div>
@@ -137,7 +137,7 @@ export default function HomePage() {
         </div>
 
         {/* Right Side - Form Section */}
-        <div className="w-full max-w-md mx-auto order-1 lg:order-2">
+        <div className="w-full max-w-md mx-auto">
           <div className="bg-white dark:bg-neutral-800 rounded-3xl shadow-xl shadow-neutral-200/50 dark:shadow-black/50 p-8 border border-neutral-100 dark:border-neutral-700 backdrop-blur-sm">
             {/* Toggle Tabs (Segmented Control) */}
             <div className="relative flex bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl mb-8">
