@@ -25,6 +25,7 @@ import {
   uploadBook,
 } from "../utils/books";
 import LibraryHeader from "../components/LibraryHeader";
+import { getToken } from "../utils/auth";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -34,7 +35,7 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("alphabetical");
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(getToken());
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {

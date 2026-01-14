@@ -17,6 +17,7 @@ export default function HomePage() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Environment variable handling
   const API_BASE_URL =
@@ -68,7 +69,14 @@ export default function HomePage() {
       }
 
       if (data.token) {
-        localStorage.setItem("token", data.token);
+        if (rememberMe) {
+          localStorage.setItem("token", data.token);
+          sessionStorage.removeItem("token");
+        } else {
+          sessionStorage.setItem("token", data.token);
+          localStorage.removeItem("token");
+        }
+
         navigate("/library");
       } else {
         alert("Registration successful! Please login.");
@@ -250,17 +258,21 @@ export default function HomePage() {
 
             <div className="mt-6 flex flex-col items-center gap-4">
               {isLogin && (
-                <div className="flex w-full items-center justify-between text-sm">
-                  <label className="flex items-center text-neutral-500 dark:text-neutral-400 cursor-pointer">
+                <div className="flex items-center justify-between mt-3">
+                  <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       className="mr-2 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
                     />
-                    Remember me
+                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                      Remember me
+                    </span>
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm"
                   >
                     Forgot password?
                   </Link>

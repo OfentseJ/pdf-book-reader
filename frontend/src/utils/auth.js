@@ -1,38 +1,34 @@
-// Check if user is authenticated
-export function isAuthenticated() {
-  return !!localStorage.getItem("token");
-}
+// utils/auth.js
+import { jwtDecode } from "jwt-decode";
 
-// Get the current token
-export function getToken() {
-  return localStorage.getItem("token");
-}
+// Helper to find the token in either storage
+export const getToken = () => {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
+};
 
-// Logout user
-export function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "/";
-}
-
-// Decode JWT token to get user info (optional)
-export function getUserFromToken() {
+export const getUserFromToken = () => {
   const token = getToken();
   if (!token) return null;
 
   try {
-    // JWT tokens have 3 parts separated by dots
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-
-    return JSON.parse(jsonPayload);
+    const decoded = jwtDecode(token);
+    return decoded;
   } catch (error) {
-    console.error("Error decoding token:", error);
+    console.error("Invalid token", error);
     return null;
   }
-}
+};
+
+export const logout = () => {
+  localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
+  window.location.href = "/";
+};
+
+// Check if user is authenticated
+export const isAuthenticated = () => {
+  const token = getToken();
+  if (!token) return false;
+  // Optional: Check expiry here
+  return true;
+};
