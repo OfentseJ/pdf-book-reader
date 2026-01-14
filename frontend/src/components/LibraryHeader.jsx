@@ -10,7 +10,7 @@ export default function LibraryHeader() {
   };
 
   return (
-    <header className="flex items-center justify-between py-2">
+    <header className="flex items-center justify-between py-4">
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm">
           {user ? getInitials(user.username) : <User className="w-5 h-5" />}

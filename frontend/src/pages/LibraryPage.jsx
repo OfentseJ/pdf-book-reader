@@ -10,7 +10,13 @@ import {
 } from "../utils/db";
 import * as pdfjsLib from "pdfjs-dist";
 import { generateThumbnailForBook } from "../utils/generateThumbnail";
-import { Plus, Search } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Loader2,
+  SlidersHorizontal,
+  ArrowUpFromLine,
+} from "lucide-react";
 import {
   deleteBook,
   fetchMyBooks,
@@ -29,6 +35,13 @@ export default function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("alphabetical");
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -41,7 +54,6 @@ export default function LibraryPage() {
       try {
         const remoteBooks = await fetchMyBooks(token);
         const normalizedBooks = remoteBooks.map(normalizeBook);
-
         const booksWithFiles = [];
 
         for (const book of normalizedBooks) {
@@ -73,7 +85,6 @@ export default function LibraryPage() {
 
           await addBook(bookToSave);
           const withThumb = await generateThumbnailForBook(bookToSave);
-
           booksWithFiles.push(withThumb);
         }
 
@@ -97,16 +108,12 @@ export default function LibraryPage() {
     switch (sortOption) {
       case "alphabetical":
         return nameA.localeCompare(nameB);
-
       case "reverse-alphabetical":
         return nameB.localeCompare(nameA);
-
       case "recently-added":
         return (b.addedAt || 0) - (a.addedAt || 0);
-
       case "last-opened":
         return (b.lastOpened || 0) - (a.lastOpened || 0);
-
       default:
         return 0;
     }
@@ -132,7 +139,6 @@ export default function LibraryPage() {
 
       await addBook(normalized);
       const bookWithThumb = await generateThumbnailForBook(normalized);
-
       setBooks((prev) => [...prev, bookWithThumb]);
     } catch (err) {
       console.error("Upload failed:", err);
@@ -145,14 +151,8 @@ export default function LibraryPage() {
   const handleRemove = async (id) => {
     const bookToRemove = books.find((b) => b.id === id);
     if (!bookToRemove) return;
-
-    if (bookToRemove.fileUrl) {
-      URL.revokeObjectURL(bookToRemove.fileUrl);
-    }
-
-    if (bookToRemove.thumbnail) {
-      URL.revokeObjectURL(bookToRemove.thumbnail);
-    }
+    if (bookToRemove.fileUrl) URL.revokeObjectURL(bookToRemove.fileUrl);
+    if (bookToRemove.thumbnail) URL.revokeObjectURL(bookToRemove.thumbnail);
 
     await removeBook(id);
     await deleteBook(id, token);
@@ -173,73 +173,89 @@ export default function LibraryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <LibraryHeader />
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 transition-colors">
+      {/* Sticky Header Section */}
+      <div
+        className={`sticky top-0 z-30 transition-all duration-200 ${
+          isScrolled
+            ? "bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 shadow-sm"
+            : "bg-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <LibraryHeader />
 
-        {/* Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8 transition-colors">
-          <div className="flex flex-col md:flex-row gap-4">
+          {/* Controls Bar */}
+          <div className="py-4 flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <div className="relative w-full md:max-w-md group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 group-focus-within:text-blue-500 transition-colors" />
               <input
                 type="text"
-                placeholder="Search your library..."
+                placeholder="Search library..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-400/50 focus:border-blue-500 transition-all text-sm font-medium text-neutral-700 dark:text-neutral-200 placeholder-neutral-400"
               />
             </div>
 
-            {/* Sort */}
-            <div className="md:w-48">
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition bg-white dark:bg-gray-700 text-gray-900 dark:text-white cursor-pointer"
-              >
-                <option value="alphabetical">A–Z</option>
-                <option value="reverse-alphabetical">Z–A</option>
-                <option value="recently-added">Recently Added</option>
-                <option value="last-opened">Last Opened</option>
-              </select>
+            {/* Sort & Stats */}
+            <div className="flex items-center space-x-3 w-full md:w-auto">
+              <div className="hidden md:block text-xs font-semibold text-neutral-400 uppercase tracking-wider mr-2">
+                {filteredBooks.length} Books
+              </div>
+
+              <div className="relative flex-1 md:flex-none">
+                <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="w-full md:w-48 pl-10 pr-8 py-2.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full focus:outline-none focus:ring-2 appearance-none text-sm font-medium text-neutral-700 dark:text-neutral-200 cursor-pointer dark:hover:bg-neutral-750  transition-colors"
+                >
+                  <option value="alphabetical">Name (A–Z)</option>
+                  <option value="reverse-alphabetical">Name (Z–A)</option>
+                  <option value="recently-added">Recently Added</option>
+                  <option value="last-opened">Last Opened</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Loading State */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
-              <p className="text-gray-600 dark:text-gray-400">
-                Loading your library...
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-96">
+            <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+            <p className="text-neutral-500 animate-pulse font-medium">
+              Syncing library...
+            </p>
           </div>
         ) : (
           <>
             {/* Books Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {/* Upload Card */}
-              <label className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl h-64 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {/* Modern Upload Card */}
+              <label className="group relative flex flex-col items-center justify-center bg-white dark:bg-neutral-800 border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl aspect-2/3 cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all duration-300 overflow-hidden">
                 <input
                   type="file"
                   accept="application/pdf"
                   onChange={handleUpload}
                   className="hidden"
                 />
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900 flex items-center justify-center transition-colors">
-                    <Plus className="w-8 h-8 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                <div className="absolute inset-0 bg-blue-500/5 dark:bg-blue-400/5 scale-0 group-hover:scale-100 transition-transform rounded-2xl" />
+
+                <div className="flex flex-col items-center space-y-3 z-10 transform group-hover:-translate-y-1 transition-transform">
+                  <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Plus className="w-7 h-7 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="text-center px-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Add Book
+                  <div className="text-center px-2">
+                    <p className="text-sm font-bold text-neutral-700 dark:text-neutral-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      New Book
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Upload PDF
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                      PDF only
                     </p>
                   </div>
                 </div>
@@ -247,7 +263,7 @@ export default function LibraryPage() {
 
               {/* Book Cards */}
               {filteredBooks.map((book) => (
-                <div key={book.id} className="relative">
+                <div key={book.id} className="relative group">
                   <BookCard
                     book={book}
                     onOpen={() => navigate(`/reader/${book.id}`)}
@@ -260,20 +276,25 @@ export default function LibraryPage() {
 
             {/* Empty State */}
             {filteredBooks.length === 0 && !loading && (
-              <div className="text-center py-16">
-                <div className="inline-block p-6 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
-                  <Search className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-24 h-24 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center mb-6">
+                  {searchTerm ? (
+                    <Search className="w-10 h-10 text-neutral-400" />
+                  ) : (
+                    <ArrowUpFromLine className="w-10 h-10 text-neutral-400" />
+                  )}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
                   {searchTerm ? "No books found" : "Your library is empty"}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-neutral-500 dark:text-neutral-400 max-w-sm mb-8">
                   {searchTerm
-                    ? "Try adjusting your search terms"
-                    : "Upload your first PDF to get started"}
+                    ? `We couldn't find anything matching "${searchTerm}". Try a different keyword.`
+                    : "Ready to start reading? Upload your first PDF book to get started."}
                 </p>
+
                 {!searchTerm && (
-                  <label className="inline-flex items-center px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer transition-colors">
+                  <label className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full cursor-pointer transition-transform active:scale-95 shadow-lg shadow-blue-500/30">
                     <input
                       type="file"
                       accept="application/pdf"
@@ -281,7 +302,7 @@ export default function LibraryPage() {
                       className="hidden"
                     />
                     <Plus className="w-5 h-5 mr-2" />
-                    Upload Your First Book
+                    Upload PDF
                   </label>
                 )}
               </div>

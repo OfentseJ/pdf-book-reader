@@ -50,7 +50,7 @@ export default function BookCard({ book, onOpen, onRemove, onRename }) {
       {/* Thumbnail Section */}
       <div
         onClick={onOpen}
-        className="relative aspect-[3/4] cursor-pointer overflow-hidden bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-700"
+        className="relative aspect-3/4 cursor-pointer overflow-hidden bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-700"
       >
         {book.thumbnail ? (
           <img
