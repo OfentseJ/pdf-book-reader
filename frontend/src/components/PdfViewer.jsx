@@ -8,11 +8,10 @@ import {
   updateBookLastOpened,
   addBook,
 } from "../utils/db";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import "react-pdf/dist/esm/Page/TextLayer.css";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Edit3,
   Trash2,
   ChevronLeft,
   ChevronRight,
@@ -23,11 +22,11 @@ import {
   X,
   ArrowLeft,
   Loader2,
-  Maximize,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function PdfViewer() {
   const { id } = useParams();
@@ -45,7 +44,10 @@ export default function PdfViewer() {
   const [numPages, setNumPages] = useState(null);
   const [pageNum, setPageNum] = useState(1);
   const [error, setError] = useState(null);
-  const [pdfUrl, setPdfUrl] = useState(null);
+
+  // ✅ FIX 1: Store raw data instead of an object in state
+  const [pdfData, setPdfData] = useState(null);
+
   const [scale, setScale] = useState(1.0);
 
   const hideControlsTimeoutRef = useRef(null);
@@ -73,7 +75,7 @@ export default function PdfViewer() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // --- DATA LOADING (Same as before) ---
+  // --- DATA LOADING ---
   useEffect(() => {
     if (!id) return;
     async function loadBook() {
@@ -98,7 +100,8 @@ export default function PdfViewer() {
 
         if (fileToOpen) {
           const arrayBuffer = await fileToOpen.arrayBuffer();
-          setPdfUrl({ data: arrayBuffer });
+          // ✅ FIX 2: Set raw ArrayBuffer data
+          setPdfData(arrayBuffer);
         }
         if (b.lastPage) setPageNum(b.lastPage);
       } catch (err) {
@@ -107,10 +110,14 @@ export default function PdfViewer() {
       }
     }
     loadBook();
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    };
+    // Removed cleanup function since we aren't using createObjectURL anymore
   }, [id]);
+
+  // ✅ FIX 3: Memoize the file object to prevent reloads
+  const fileObject = useMemo(() => {
+    if (!pdfData) return null;
+    return { data: pdfData };
+  }, [pdfData]);
 
   // --- KEYBOARD & TOUCH LOGIC ---
 
@@ -360,10 +367,10 @@ export default function PdfViewer() {
         >
           {error ? (
             <div className="text-red-500 p-8 text-center">{error}</div>
-          ) : pdfUrl ? (
+          ) : pdfData ? ( // ✅ FIX 4: Check pdfData instead of pdfUrl
             <div className="relative shadow-xl shadow-neutral-500/20 dark:shadow-black/50 transition-transform duration-200 ease-out origin-top">
               <Document
-                file={pdfUrl}
+                file={fileObject} // ✅ FIX 5: Use memoized file object
                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                 loading={
                   <div className="h-96 w-full animate-pulse bg-neutral-200 dark:bg-neutral-800 rounded-lg" />

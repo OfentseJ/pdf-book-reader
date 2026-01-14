@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router-dom";
 import {
   BookOpen,
   Lock,
@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -60,8 +59,11 @@ export default function HomePage() {
 
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
+        console.log("5. Data parsed:", data);
       } else {
-        throw new Error("Server configuration error.");
+        const text = await response.text();
+        console.log("5. ERROR - Non-JSON response:", text);
+        throw new Error("Server sent non-JSON response");
       }
 
       if (!response.ok) {
@@ -69,23 +71,17 @@ export default function HomePage() {
       }
 
       if (data.token) {
-        if (rememberMe) {
-          localStorage.setItem("token", data.token);
-          sessionStorage.removeItem("token");
-        } else {
-          sessionStorage.setItem("token", data.token);
-          localStorage.removeItem("token");
-        }
-
+        localStorage.setItem("token", data.token);
         navigate("/library");
       } else {
         alert("Registration successful! Please login.");
         setIsLogin(true);
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      alert(error.message || "Something went wrong. Please try again.");
+      console.error("!!! CAUGHT ERROR !!!", error);
+      alert(`Error: ${error.message}`);
     } finally {
+      console.log("7. Finally block - stopping loading");
       setLoading(false);
     }
   };
@@ -258,7 +254,7 @@ export default function HomePage() {
 
             <div className="mt-6 flex flex-col items-center gap-4">
               {isLogin && (
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex w-full items-center justify-between text-sm">
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -272,7 +268,7 @@ export default function HomePage() {
                   </label>
                   <Link
                     to="/forgot-password"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm"
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
                     Forgot password?
                   </Link>
