@@ -22,6 +22,7 @@ import {
   X,
   ArrowLeft,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -64,7 +65,7 @@ export default function PdfViewer() {
       // On desktop, limit to 1000px or available space
       const newWidth = Math.min(
         1000,
-        window.innerWidth - (window.innerWidth < 768 ? 20 : 80)
+        window.innerWidth - (window.innerWidth < 768 ? 20 : 80),
       );
       setPdfWidth(newWidth);
     };
@@ -133,7 +134,7 @@ export default function PdfViewer() {
         }
       }
     },
-    [numPages]
+    [numPages],
   );
 
   // Keyboard
@@ -212,7 +213,7 @@ export default function PdfViewer() {
         clearTimeout(hideControlsTimeoutRef.current);
       hideControlsTimeoutRef.current = setTimeout(
         () => setControlsVisible(false),
-        3000
+        3000,
       );
     };
 
@@ -245,9 +246,10 @@ export default function PdfViewer() {
     setBook({ ...book, bookmarks: updatedBookmarks });
   };
 
-  const updateBookmarkLabel = async (bookmarkId, newLabel) => {
+  const updateBookmarkLabel = async (bookmarkId) => {
+    const newLabel = window.prompt("Enter bookmark label:");
     const updatedBookmarks = book.bookmarks.map((b) =>
-      b.id === bookmarkId ? { ...b, label: newLabel } : b
+      b.id === bookmarkId ? { ...b, label: newLabel } : b,
     );
     await updateBookBookmarks(book.id, updatedBookmarks);
     setBook({ ...book, bookmarks: updatedBookmarks });
@@ -304,11 +306,19 @@ export default function PdfViewer() {
                       <span className="text-xs font-bold text-blue-600 uppercase">
                         Page {bm.page}
                       </span>
-                      <p className="text-sm text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">
+                      <p className="text-sm text-neutral-700 dark:text-neutral-300 truncate max-w-37.5">
                         {bm.label || "Untitled"}
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateBookmarkLabel(bm.id);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -343,7 +353,7 @@ export default function PdfViewer() {
               <ArrowLeft className="w-5 h-5 text-neutral-800 dark:text-neutral-200" />
             </button>
             {/* Truncate text heavily on mobile */}
-            <h1 className="text-xs md:text-sm font-semibold text-neutral-800 dark:text-neutral-200 max-w-[120px] md:max-w-[200px] truncate">
+            <h1 className="text-xs md:text-sm font-semibold text-neutral-800 dark:text-neutral-200 max-w-30 md:max-w-50 truncate">
               {book.name}
             </h1>
           </div>
@@ -367,11 +377,18 @@ export default function PdfViewer() {
         >
           {error ? (
             <div className="text-red-500 p-8 text-center">{error}</div>
-          ) : pdfData ? ( // ✅ FIX 4: Check pdfData instead of pdfUrl
+          ) : pdfData ? (
             <div className="relative shadow-xl shadow-neutral-500/20 dark:shadow-black/50 transition-transform duration-200 ease-out origin-top">
               <Document
-                file={fileObject} // ✅ FIX 5: Use memoized file object
-                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                file={fileObject}
+                onLoadSuccess={({ numPages }) => {
+                  setNumPages(numPages);
+
+                  if (book && (!book.numPages || book.numPages !== numPages)) {
+                    updateBookNumPages(book.id, numPages).catch(console.error);
+                    setBook((prev) => ({ ...prev, numPages }));
+                  }
+                }}
                 loading={
                   <div className="h-96 w-full animate-pulse bg-neutral-200 dark:bg-neutral-800 rounded-lg" />
                 }

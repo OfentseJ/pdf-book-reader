@@ -13,7 +13,8 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -30,7 +31,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 
 // routes
@@ -55,11 +56,18 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// === 🔴 UPDATED SECTION BELOW ===
 if (process.env.NODE_ENV !== "production") {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
+
+  // Capture the server instance
+  const server = app.listen(PORT, () => {
     console.log(`🚀 Server running locally on http://localhost:${PORT}`);
   });
+
+  server.setTimeout(300000);
+  server.keepAliveTimeout = 120000;
+  server.headersTimeout = 120000;
 }
 
 export default app;
