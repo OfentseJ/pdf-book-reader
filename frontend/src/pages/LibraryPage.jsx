@@ -150,21 +150,32 @@ export default function LibraryPage() {
   };
 
   const handleRemove = async (id) => {
-    const bookToRemove = books.find((b) => b.id === id);
-    if (!bookToRemove) return;
-    if (bookToRemove.fileUrl) URL.revokeObjectURL(bookToRemove.fileUrl);
-    if (bookToRemove.thumbnail) URL.revokeObjectURL(bookToRemove.thumbnail);
+    try {
+      const bookToRemove = books.find((b) => b.id === id);
+      if (!bookToRemove) return;
 
-    await removeBook(id);
-    await deleteBook(id, token);
-    setBooks((prev) => prev.filter((b) => b.id !== id));
+      await deleteBook(id, token);
+      await removeBook(id);
+
+      if (bookToRemove.fileUrl?.startsWith("blob:"))
+        URL.revokeObjectURL(bookToRemove.fileUrl);
+      if (bookToRemove.thumbnail?.startsWith("blob:"))
+        URL.revokeObjectURL(bookToRemove.thumbnail);
+
+      setBooks((prev) => prev.filter((b) => b.id !== id));
+    } catch (err) {
+      console.err("Failed to delete book:", err);
+      alert(
+        "Failed to delete the book. Please check your connection and try again.",
+      );
+    }
   };
 
   const handleRename = async (id, newName) => {
     const updatedBook = await updateBookName(id, newName);
     await renameBook(id, newName, token);
     setBooks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, name: updatedBook.name } : b))
+      prev.map((b) => (b.id === id ? { ...b, name: updatedBook.name } : b)),
     );
   };
 
