@@ -59,23 +59,16 @@ export async function deleteBook(bookId, token) {
   if (!response.ok) throw new Error("Failed to delete book");
   return await response.json();
 }
-
 export function normalizeBook(rawBook) {
+  const rawId = rawBook.book_id || rawBook.id;
+  const safeId = rawId ? String(rawId) : crypto.randomUUID();
+
   return {
-    // Local unique ID for IndexedDB
-    id: rawBook.book_id || rawBook.id || crypto.randomUUID(),
-
-    // Backend ID (for sync/delete later)
-    book_id: rawBook.book_id || null,
-
-    // Basic book info
+    id: safeId,
+    book_id: rawBook.book_id ? String(rawBook.book_id) : null,
     name: rawBook.title || rawBook.name || "Untitled",
     fileUrl: rawBook.url || rawBook.cloudinary_url || null,
-
-    // PDF file (Blob) — only present for locally uploaded books
     file: rawBook.file || null,
-
-    // Other data
     bookmarks: rawBook.bookmarks || [],
     thumbnail: rawBook.thumbnail || null,
     addedAt: rawBook.addedAt || Date.now(),
