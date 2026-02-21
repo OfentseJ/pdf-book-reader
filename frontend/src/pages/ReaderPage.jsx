@@ -11,7 +11,7 @@ export default function ReaderPage() {
   useEffect(() => {
     setLoading(true);
 
-    const bookId = isNaN(id) ? id : Number(id);
+    const bookId = String(id);
 
     getBook(bookId)
       .then((b) => {

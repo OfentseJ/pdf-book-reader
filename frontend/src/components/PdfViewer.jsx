@@ -46,7 +46,6 @@ export default function PdfViewer() {
   const [pageNum, setPageNum] = useState(1);
   const [error, setError] = useState(null);
 
-  // ✅ FIX 1: Store raw data instead of an object in state
   const [pdfData, setPdfData] = useState(null);
 
   const [scale, setScale] = useState(1.0);
@@ -61,8 +60,6 @@ export default function PdfViewer() {
   // --- 1. RESPONSIVE WIDTH LOGIC ---
   useEffect(() => {
     const handleResize = () => {
-      // On mobile, take full width minus small padding
-      // On desktop, limit to 1000px or available space
       const newWidth = Math.min(
         1000,
         window.innerWidth - (window.innerWidth < 768 ? 20 : 80),
@@ -81,7 +78,7 @@ export default function PdfViewer() {
     if (!id) return;
     async function loadBook() {
       try {
-        const bookId = isNaN(id) ? id : Number(id);
+        const bookId = String(id);
         const b = await getBook(bookId);
         if (!b) throw new Error("Book not found");
         setBook(b);
@@ -101,7 +98,6 @@ export default function PdfViewer() {
 
         if (fileToOpen) {
           const arrayBuffer = await fileToOpen.arrayBuffer();
-          // ✅ FIX 2: Set raw ArrayBuffer data
           setPdfData(arrayBuffer);
         }
         if (b.lastPage) setPageNum(b.lastPage);

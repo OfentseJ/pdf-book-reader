@@ -69,10 +69,10 @@ export async function removeBookBookmark(id, pageNum) {
 
 export async function removeBook(id) {
   const db = await initDB();
-  const tx = db.transaction("books", readwrite);
+  const tx = db.transaction("books", "readwrite");
   const store = tx.objectStore("books");
 
-  await store.delete(String(id));
+  await store.delete(id);
   await tx.done;
 }
 

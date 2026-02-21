@@ -148,26 +148,34 @@ export default function LibraryPage() {
       setLoading(false);
     }
   };
-
   const handleRemove = async (id) => {
     try {
       const bookToRemove = books.find((b) => b.id === id);
       if (!bookToRemove) return;
 
-      await deleteBook(id, token);
+      try {
+        const targetBackendId = bookToRemove.book_id || id;
+        await deleteBook(targetBackendId, token);
+      } catch (backendErr) {
+        console.warn(
+          "Backend deletion skipped (it may already be deleted):",
+          backendErr,
+        );
+      }
+
       await removeBook(id);
 
-      if (bookToRemove.fileUrl?.startsWith("blob:"))
+      if (bookToRemove.fileUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(bookToRemove.fileUrl);
-      if (bookToRemove.thumbnail?.startsWith("blob:"))
+      }
+      if (bookToRemove.thumbnail?.startsWith("blob:")) {
         URL.revokeObjectURL(bookToRemove.thumbnail);
+      }
 
       setBooks((prev) => prev.filter((b) => b.id !== id));
     } catch (err) {
-      console.error("Failed to delete book:", err);
-      alert(
-        "Failed to delete the book. Please check your connection and try again.",
-      );
+      console.error("Failed to delete book locally:", err);
+      alert("Failed to delete the book locally. Please try again.");
     }
   };
 
