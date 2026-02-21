@@ -164,7 +164,7 @@ export default function LibraryPage() {
 
       setBooks((prev) => prev.filter((b) => b.id !== id));
     } catch (err) {
-      console.err("Failed to delete book:", err);
+      console.error("Failed to delete book:", err);
       alert(
         "Failed to delete the book. Please check your connection and try again.",
       );
